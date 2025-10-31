@@ -1,0 +1,120 @@
+.account-content-reg{
+    background: url('../assets/travel/shutterstock2454866115.avif');
+  background-size: cover;
+  background-attachment: fixed;
+  width: 100%;
+  height:100vh;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: #6c757d;
+}
+
+.account-content-login{
+    background: url('../assets/travel/shutterstockRF1313534846.avif');
+  background-size: cover;
+  background-attachment: fixed;
+  width: 100%;
+  height:100vh;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: #6c757d;
+}
+.account-content-admin{
+    background: url('../assets/travel/shutterstock2413310961.avif');
+  background-size: cover;
+  background-attachment: fixed;
+  width: 100%;
+  height:100vh;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: #6c757d;
+}
+.bg-backdrop {
+  
+     background: rgba(255, 255, 255, 0.95);
+     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+   }
+   .input-icon-addon {
+     position: absolute;
+     left: 10px;
+     top: 50%;
+     transform: translateY(-50%);
+     color: #6c757d;
+   }
+   .position-relative .form-control {
+     padding-left: 35px;
+   }
+   .pass-group {
+     position: relative;
+   }
+   .toggle-password {
+     position: absolute;
+     right: 10px;
+     top: 50%;
+     transform: translateY(-50%);
+     cursor: pointer;
+     color: #6c757d;
+   }
+   .br-10 {
+     border-radius: 10px;
+   }
+   .bg-pending {
+     background-color: #3b5998;
+     color: white;
+   }
+   .or-text h4 {
+     text-align: center;
+     position: relative;
+     margin: 20px 0;
+   }
+   .or-text h4::before,
+   .or-text h4::after {
+     content: "";
+     position: absolute;
+     top: 50%;
+     width: 45%;
+     height: 1px;
+     background: #ccc;
+   }
+   .or-text h4::before {
+     left: 0;
+   }
+   .or-text h4::after {
+     right: 0;
+   }
+
+   @media (max-width: 992px) {
+     .bg-backdrop {
+       width: 90% !important;
+       padding: 2rem !important;}
+   }
+   @media (max-width: 768px) {
+     .account-content {
+      background: rgba(99, 98, 98, 0.95);
+       height: auto;
+       overflow-y: auto;
+     }
+     .vh-100 {
+       height: auto !important;
+     }
+     .w-50 {
+       width: 100% !important;
+     }
+     .bg-backdrop {
+       border-radius: 0;
+       box-shadow: none;
+       background: white;
+     }
+     .mx-auto {
+       max-width: 100% !important;
+     }
+     .p-4 {
+       padding: 1.5rem !important;
+     }
+   }
