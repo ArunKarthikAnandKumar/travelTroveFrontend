@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Continent, Country, State, City } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constants";
+import type { Continent, Country, State, City } from "../../../models/Destinations";
+import { BASE_URL } from "../../../utils/constatnts";
 
 type Props = {
   show: boolean;

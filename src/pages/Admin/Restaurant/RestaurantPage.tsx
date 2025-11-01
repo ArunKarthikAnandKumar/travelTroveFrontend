@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Continent, Country, State, City } from "../../../models/Destinations";
+import type { Continent, Country, State, City } from "../../../models/Destinations";
 import "../../../css/AdminForms.css";
 import { RestaurantDrawer } from "./RestaurantDrawer";
 import {
@@ -8,8 +8,8 @@ import {
   deleteRestaurant,
   fetchAllRestaurants,
 } from "../../../api/adminApi";
-import AlertMessage from "../../../Components/Common/AlertMessage";
-import { BASE_URL } from "../../../utils/constants";
+import AlertMessage from "../../../components/Common/AlertMessage";
+import { BASE_URL } from "../../../utils/constatnts";
 
 const RestaurantPage: React.FC = () => {
   const [restaurants, setRestaurants] = useState<any[]>([]);

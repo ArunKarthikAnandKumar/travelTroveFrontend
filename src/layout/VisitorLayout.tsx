@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom"
-import VisitorNavbar from "../Components/NavBar/VisitorNavbar"
+import VisitorNavbar from "../components/NavBar/VisitorNavbar"
 
 
 const VisitorLayout:React.FC=()=>{

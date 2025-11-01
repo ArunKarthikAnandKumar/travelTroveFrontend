@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom"
-import AdminNavbar from "../Components/NavBar/AdminNavbar"
+import AdminNavbar from "../components/NavBar/AdminNavbar"
 
 
 const AdminLayout:React.FC=()=>{

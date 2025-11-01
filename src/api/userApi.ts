@@ -1,4 +1,4 @@
-import { LoginFormData, RegisterFormData } from "../models/forms";
+import type { LoginFormData, RegisterFormData } from "../models/froms";
 import axiosInstance from "./axiosInstance";
 
 

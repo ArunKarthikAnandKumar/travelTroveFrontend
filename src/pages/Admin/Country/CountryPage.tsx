@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from "react"
-import { Country, Continent } from "../../../models/Destinations"
+import type { Country, Continent } from "../../../models/Destinations"
 import "../../../css/AdminForms.css"
 import { CountryDrawer } from "./CountryDrawer"
 import { addCountry, deleteCountry, fetchAllCountrys, updateCountry } from "../../../api/adminApi"
-import AlertMessage from "../../../Components/Common/AlertMessage"
+import AlertMessage from "../../../components/Common/AlertMessage"
 import { setToken } from "../../../utils/token"
-import { BASE_URL } from "../../../utils/constants"
+import { BASE_URL } from "../../../utils/constatnts"
 
 
 

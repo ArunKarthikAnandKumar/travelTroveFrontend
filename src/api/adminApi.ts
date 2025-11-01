@@ -1,8 +1,6 @@
 import axios from "axios";
-import { LoginFormData, RegisterFormData } from "../models/forms";
 import axiosAdminInstance from "./axiosAdminInstance";
-import { BASE_URL } from "../utils/constants";
-import { Continent } from "../models/Destinations";
+import { BASE_URL } from "../utils/constatnts";
 import axiosAdminMultipartInstance from "./axiosAdminInstanceMultipart";
 
 

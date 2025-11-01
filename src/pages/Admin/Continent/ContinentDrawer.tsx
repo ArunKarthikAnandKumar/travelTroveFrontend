@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Continent } from "../../../models/Destinations"
-import { BASE_URL } from "../../../utils/constants";
+import type { Continent } from "../../../models/Destinations";
+import { BASE_URL } from "../../../utils/constatnts";
 
 
 type Props = {

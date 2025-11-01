@@ -14,14 +14,14 @@ const AdminSidebar: React.FC = () => {
 
   const menuItems = [
     { name: "Continents", icon: "bi-globe", path: "/admin/continents" },
-    { name: "Countries", icon: "bi-map", path: "/admin/countrys" },
+    { name: "Countries", icon: "bi-map", path: "/admin/countries" },
     { name: "States", icon: "bi-geo-alt", path: "/admin/states" },
-    { name: "Cities", icon: "bi-building", path: "/admin/citys" },
+    { name: "Cities", icon: "bi-building", path: "/admin/cities" },
     { name: "Attractions", icon: "bi-signpost-split", path: "/admin/attractions" },
     { name: "Restaurants", icon: "bi-cup-straw", path: "/admin/restaurants" },
     { name: "Hotels", icon: "bi-house-door", path: "/admin/hotels" },
     { name: "Destination Guides", icon: "bi-book", path: "/admin/destinationGuides" },
-    { name: "Itineraries", icon: "bi-calendar-week", path: "/admin/itenary" },
+    { name: "Itineraries", icon: "bi-calendar-week", path: "/admin/itinerary" },
   ];
 
   return (

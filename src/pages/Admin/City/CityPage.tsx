@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { City, State, Country, Continent } from "../../../models/Destinations";
+import type { City, State, Country, Continent } from "../../../models/Destinations";
 import "../../../css/AdminForms.css";
 import { CityDrawer } from "./CityDrawer";
 import {
@@ -8,8 +8,8 @@ import {
   fetchAllCities,
   updateCity,
 } from "../../../api/adminApi";
-import AlertMessage from "../../../Components/Common/AlertMessage";
-import { BASE_URL } from "../../../utils/constants";
+import AlertMessage from "../../../components/Common/AlertMessage";
+import { BASE_URL } from "../../../utils/constatnts";
 
 const CityPage: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);

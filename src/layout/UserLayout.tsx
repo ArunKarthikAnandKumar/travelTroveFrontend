@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom"
-import UserNavbar  from "../Components/NavBar/UserNavBar"
+import UserNavbar from "../components/NavBar/UserNavbar"
 
 const UserLayout:React.FC=()=>{
     

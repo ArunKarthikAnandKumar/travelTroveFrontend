@@ -1,9 +1,10 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from "react"
-import { LoginFormData, LoginFormErrors, LoginFormValid } from "../../models/forms";
+import { type FormEvent, useEffect, useState } from "react"
+import type { LoginFormData, LoginFormErrors, LoginFormValid } from "../../models/froms";
 import { loginAdmin, loginUser, registerUser } from "../../api/userApi";
-import AlertMessage from "../../Components/Common/AlertMessage";
+import AlertMessage from "../../components/Common/AlertMessage";
+
 import { useNavigate } from "react-router-dom";
-import { COUNTRY_DATA } from "../../utils/constants";
+import { COUNTRY_DATA } from "../../utils/constatnts";
 import { setAdminData, setAdminId, setRole, setToken } from "../../utils/token";
 
 

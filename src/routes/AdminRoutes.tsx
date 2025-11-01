@@ -9,8 +9,8 @@ import CityPage from "../pages/Admin/City/CityPage";
 import AttractionPage from "../pages/Admin/Attraction/AttractionPage";
 import RestaurantPage from "../pages/Admin/Restaurant/RestaurantPage";
 import HotelPage from "../pages/Admin/Hotel/HotelPage";
-import DestinationGuidePage from "../pages/Admin/DestinationGuide/DestinationGuidePage";
-import ItineraryPage from "../pages/Admin/Itinerary/ItineraryPage";
+import DestinationGuidePage from "../pages/Admin/DestinationGuide/DestinationPage";
+import ItineraryPage from "../pages/Admin/Itenary/ItenaryPage";
 
 const AdminRoutes: React.FC = () => {
   return (
