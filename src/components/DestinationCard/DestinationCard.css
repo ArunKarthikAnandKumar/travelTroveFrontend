@@ -1,0 +1,114 @@
+.destination-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.destination-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.destination-card .card-img-top {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.destination-card .card-body {
+  padding: 1.25rem;
+}
+
+.destination-card .card-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  min-height: auto;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.destination-card .card-subtitle {
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.destination-card .card-text {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.destination-card .btn {
+  font-weight: 500;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .destination-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .destination-card .card-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animation for loading state */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.destination-card.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* Rating badge */
+.rating-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 193, 7, 0.9);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Highlights list */
+.highlights-list {
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+.highlights-list li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.highlights-list li i {
+  margin-right: 5px;
+  margin-top: 2px;
+  font-size: 0.75rem;
+}

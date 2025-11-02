@@ -1,0 +1,129 @@
+.destination-detail-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-bottom: 2rem;
+  font-family: "Open Sans", sans-serif;
+}
+
+/* Container improvements for better space utilization */
+.destination-detail-page .container {
+  max-width: 1400px;
+  padding: 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .destination-detail-page .container {
+    padding: 0 1rem;
+  }
+}
+
+/* General spacing improvements */
+.destination-detail-page .bg-white {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.destination-detail-page .content-section {
+  line-height: 1.6;
+}
+
+.destination-detail-page h1,
+.destination-detail-page h4 {
+  color: #333;
+}
+
+.destination-detail-page p,
+.destination-detail-page li {
+  color: #555;
+  line-height: 1.7;
+}
+
+/* Increase spacing between columns */
+@media (min-width: 992px) {
+  .destination-detail-page .row {
+    --bs-gutter-x: 2.5rem;
+  }
+}
+
+/* Main content column improvements */
+@media (min-width: 992px) {
+  .destination-detail-page .col-lg-8 {
+    flex: 0 0 66.66666667%;
+    max-width: 66.66666667%;
+    width: 66.66666667%;
+  }
+  
+  .destination-detail-page .col-lg-4 {
+    flex: 0 0 33.33333333%;
+    max-width: 33.33333333%;
+    width: 33.33333333%;
+  }
+}
+
+/* Sidebar styling */
+.destination-detail-page .sidebar {
+  top: 20px;
+  border: 1px solid #e5e5e5;
+  background-color: #fff;
+}
+
+/* Review box */
+.destination-detail-page .bg-light {
+  background-color: #f9fafb !important;
+}
+
+/* Image improvements */
+.destination-detail-page .main-section img {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive text improvements */
+.destination-detail-page h1 {
+  font-size: 2.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 1200px) {
+  .destination-detail-page h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .destination-detail-page h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Ensure main section takes full width */
+.destination-detail-page .main-section {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.destination-detail-page .main-section h1 {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+}
+
+/* Better content readability */
+.destination-detail-page .content-section p {
+  font-size: 1.1rem;
+}
+
+@media (min-width: 1200px) {
+  .destination-detail-page .content-section p {
+    font-size: 1.15rem;
+  }
+}

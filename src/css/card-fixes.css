@@ -1,0 +1,295 @@
+/* Global Card Fixes - Prevent Shrinking and Ensure Proper Space */
+/* Import this AFTER Bootstrap CSS to ensure proper override */
+
+/* Container fixes - ensure full width */
+.container {
+  width: 100% !important;
+  max-width: 1400px !important;
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Row fixes - prevent shrinking with higher specificity */
+.row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  margin-left: -15px !important;
+  margin-right: -15px !important;
+}
+
+.row > * {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+/* Card base styles - prevent shrinking */
+.card,
+.card.h-100 {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  word-wrap: break-word !important;
+  background-color: #fff !important;
+  background-clip: border-box !important;
+  border: 1px solid rgba(0, 0, 0, 0.125) !important;
+  border-radius: 0.375rem !important;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.card-body {
+  flex: 1 1 auto !important;
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+.card-title {
+  margin-bottom: 0.5rem !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  min-height: auto !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+}
+
+.card-text {
+  margin-bottom: 1rem !important;
+  flex-grow: 1 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Column fixes - ensure proper width with !important */
+.col,
+.col-md-6,
+.col-lg-4,
+.col-lg-8,
+.col-lg-3,
+.col-md-4,
+.col-md-8 {
+  position: relative !important;
+  width: 100% !important;
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Medium screens */
+@media (min-width: 768px) {
+  .col-md-4 {
+    flex: 0 0 33.33333333% !important;
+    width: 33.33333333% !important;
+    max-width: 33.33333333% !important;
+  }
+  
+  .col-md-6 {
+    flex: 0 0 50% !important;
+    width: 50% !important;
+    max-width: 50% !important;
+  }
+  
+  .col-md-8 {
+    flex: 0 0 66.66666667% !important;
+    width: 66.66666667% !important;
+    max-width: 66.66666667% !important;
+  }
+}
+
+/* Large screens */
+@media (min-width: 992px) {
+  .col-lg-3 {
+    flex: 0 0 25% !important;
+    width: 25% !important;
+    max-width: 25% !important;
+  }
+  
+  .col-lg-4 {
+    flex: 0 0 33.33333333% !important;
+    width: 33.33333333% !important;
+    max-width: 33.33333333% !important;
+  }
+  
+  .col-lg-8 {
+    flex: 0 0 66.66666667% !important;
+    width: 66.66666667% !important;
+    max-width: 66.66666667% !important;
+  }
+  
+  .col-lg-9 {
+    flex: 0 0 75% !important;
+    width: 75% !important;
+    max-width: 75% !important;
+  }
+}
+
+/* Override SearchResults grid layout for row */
+section .row,
+#search-results .row,
+.results-section .row,
+.results-section .container .row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+/* Fix for inline grid styles - ensure cards don't shrink */
+[style*="display: grid"],
+[style*="display:grid"],
+div[style*="gridTemplateColumns"],
+div[style*="grid-template-columns"] {
+  /* Ensure grid items (cards) don't shrink */
+}
+
+[style*="display: grid"] > *,
+[style*="display:grid"] > *,
+div[style*="gridTemplateColumns"] > *,
+div[style*="grid-template-columns"] > * {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+[style*="display: grid"] .card,
+[style*="display:grid"] .card,
+div[style*="gridTemplateColumns"] .card,
+div[style*="grid-template-columns"] .card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex: 1 1 auto !important;
+}
+
+/* Grid layout fixes */
+.grid-container {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Card image fixes */
+.card-img-top {
+  width: 100% !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure proper spacing in card layouts */
+.card + .card {
+  margin-top: 0;
+}
+
+/* Fix for cards in grid */
+.row .card {
+  margin-bottom: 1.5rem !important;
+}
+
+/* Prevent flex shrinking in flex containers */
+.d-flex {
+  flex-shrink: 0 !important;
+}
+
+/* Text overflow fixes */
+h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+}
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+  .card-title {
+    font-size: 1.1rem !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+  }
+  
+  .card-text {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Ensure full width for main content areas */
+.main-content {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Fix for detail pages */
+.detail-page .col-lg-8,
+.detail-page .col-lg-4 {
+  flex: 0 0 auto !important;
+}
+
+@media (min-width: 992px) {
+  .detail-page .col-lg-8 {
+    width: 66.66666667% !important;
+    max-width: 66.66666667% !important;
+  }
+  
+  .detail-page .col-lg-4 {
+    width: 33.33333333% !important;
+    max-width: 33.33333333% !important;
+  }
+}
+
+/* Prevent text truncation in important headings */
+h1, h2 {
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* Card action buttons */
+.card .btn {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+/* Destination card specific fixes */
+.destination-card,
+.destination-card.card {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.destination-card .card-body {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Fix for grid layouts - ensure cards don't shrink */
+[style*="grid-template-columns"] .card,
+[style*="gridTemplateColumns"] .card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Ensure cards in flex containers don't shrink */
+.d-flex .card,
+.flex .card {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}

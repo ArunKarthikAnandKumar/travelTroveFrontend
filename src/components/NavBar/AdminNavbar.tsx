@@ -22,6 +22,7 @@ const AdminSidebar: React.FC = () => {
     { name: "Hotels", icon: "bi-house-door", path: "/admin/hotels" },
     { name: "Destination Guides", icon: "bi-book", path: "/admin/destinationGuides" },
     { name: "Itineraries", icon: "bi-calendar-week", path: "/admin/itinerary" },
+    { name: "Travel Groups", icon: "bi-people", path: "/admin/travel-groups" },
   ];
 
   return (

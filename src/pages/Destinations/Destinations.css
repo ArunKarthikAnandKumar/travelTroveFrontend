@@ -1,0 +1,156 @@
+.destinations-header {
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+              url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 6rem 0 4rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.destinations-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.destinations-header p {
+  font-size: 1.25rem;
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.destination-card {
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.destination-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.destination-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.destination-card .card-body {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 200px);
+}
+
+.destination-card .card-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+}
+
+.destination-card .card-text {
+  flex-grow: 1;
+  color: #6c757d;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.destination-card .location {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.destination-card .rating {
+  color: #ffc107;
+  margin-bottom: 1rem;
+}
+
+/* Pagination styles */
+.pagination {
+  margin: 2rem 0;
+}
+
+.pagination .page-link {
+  color: #0d6efd;
+  border: 1px solid #dee2e6;
+  margin: 0 2px;
+  border-radius: 4px;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.pagination .page-link:hover {
+  background-color: #e9ecef;
+}
+
+/* Filter section */
+.filter-section {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.filter-section h5 {
+  margin-bottom: 1rem;
+  color: #495057;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .destinations-header {
+    padding: 4rem 0 2rem;
+  }
+  
+  .destinations-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .destinations-header p {
+    font-size: 1rem;
+    padding: 0 1rem;
+  }
+  
+  .filter-section .form-select {
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 0.25rem solid rgba(13, 110, 253, 0.3);
+  border-radius: 50%;
+  border-top-color: #0d6efd;
+  animation: spin 1s ease-in-out infinite;
+  margin: 20px auto;
+}

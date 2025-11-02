@@ -129,22 +129,22 @@ export const deleteHotel = async (id: string) => {
 };
 
 export const fetchAllDestinationGuides = async () => {
-  return await axiosAdminInstance.get("/allDestinationGuides");
+  return await axiosAdminInstance.get("/destinationGuides/allDestinationGuides");
 };
 
 
 export const addDestinationGuide = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addDestinationGuide", formData);
+  return await axiosAdminMultipartInstance.post("/destinationGuides/addDestinationGuide", formData);
 };
 
 
 export const updateDestinationGuide = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateDestinationGuide/${id}`, formData);
+  return await axiosAdminMultipartInstance.post(`/destinationGuides/updateDestinationGuide/${id}`, formData);
 };
 
 
 export const deleteDestinationGuide = async (id: string) => {
-  return await axiosAdminMultipartInstance.delete(`/deleteDestinationGuide/${id}`);
+  return await axiosAdminMultipartInstance.delete(`/destinationGuides/deleteDestinationGuide/${id}`);
 };
 
 
@@ -166,3 +166,23 @@ export const updateItinerary = async (formData: FormData, id: string) => {
 export const deleteItinerary = async (id: string) => {
   return await axiosAdminMultipartInstance.delete(`/deleteItenary/${id}`);
 };
+
+
+export const fetchAllTravelGroups = async () => {
+  return await axiosAdminInstance.get("/getAllTravelGroups");
+};
+
+
+export const addTravelGroup = async (formData: FormData) => {
+  return await axiosAdminMultipartInstance.post("/addTravelGroup", formData);
+};
+
+
+export const updateTravelGroup = async (formData: FormData, id: string) => {
+  return await axiosAdminMultipartInstance.post(`/updateTravelGroup/${id}`, formData);
+};
+
+
+export const deleteTravelGroup = async (id: string) => {
+  return await axiosAdminMultipartInstance.delete(`/deleteTravelGroup/${id}`);
+};  

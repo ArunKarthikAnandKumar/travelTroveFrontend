@@ -11,6 +11,7 @@ import RestaurantPage from "../pages/Admin/Restaurant/RestaurantPage";
 import HotelPage from "../pages/Admin/Hotel/HotelPage";
 import DestinationGuidePage from "../pages/Admin/DestinationGuide/DestinationPage";
 import ItineraryPage from "../pages/Admin/Itenary/ItenaryPage";
+import TravelGroupPage from "../pages/Admin/TravelGroup/TravelGroupPage";
 
 const AdminRoutes: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="/hotels" element={<HotelPage />} />
         <Route path="/itinerary" element={<ItineraryPage />} />
         <Route path="/destinationGuides" element={<DestinationGuidePage />} />
+        <Route path="/travel-groups" element={<TravelGroupPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
