@@ -6,8 +6,7 @@ import { ContinentDrawer } from "./ContinentDrawer"
 import { addContinent, deleteContinent, fetchAllContinents, updateContinent } from "../../../api/adminApi"
 import AlertMessage from "../../../components/Common/AlertMessage"
 import { setToken } from "../../../utils/token"
-import { BASE_URL } from "../../../utils/constatnts"
-
+import { BASE_URL } from "../../../utils/constatnts";
 
 
 const ContinentPage: React.FC = () => {
@@ -40,6 +39,36 @@ const ContinentPage: React.FC = () => {
     const [currentPageSize, SetCurrentPageSize] = useState(1)
     const pageSize = 5
     const pagCount = Math.ceil(continents.length / pageSize)
+
+    // Helper function to format thumbnail for display
+    const formatThumbnailForDisplay = (thumbnail: string): string => {
+        if (!thumbnail) return '';
+        
+        // If it already starts with data:image, use it directly
+        if (thumbnail.startsWith('data:image')) {
+            return thumbnail;
+        }
+        
+        // If it contains "data:image" (backend might have prefixed it), extract the data URL part
+        const dataImageIndex = thumbnail.indexOf('data:image');
+        if (dataImageIndex !== -1) {
+            // Extract everything from "data:image" onwards
+            return thumbnail.substring(dataImageIndex);
+        }
+        
+        // If it starts with assets/ or is a path, use BASE_URL
+        if (thumbnail.startsWith('assets/')) {
+            return `${BASE_URL}/${thumbnail}`;
+        }
+        
+        // If it's pure base64 (no prefix), add the data URL prefix
+        if (thumbnail.length > 100 && !thumbnail.includes('/')) {
+            return `data:image/jpeg;base64,${thumbnail}`;
+        }
+        
+        // Fallback: assume it's a path
+        return `${BASE_URL}/${thumbnail}`;
+    };
 
     const paginatedData = continents.slice(
         (currentPageSize - 1) * pageSize,
@@ -77,63 +106,36 @@ const ContinentPage: React.FC = () => {
     }
 
     const handleSubmit = async (data: any) => {
-        if (editData) {
-            const formData = new FormData()
-            formData.append("name", data.name)
-            formData.append("shortDesc", data.shortDesc)
-            formData.append("longDesc", data.longDesc)
-            
-            if (data.thumbnailFile) {
-                formData.append("thumbnail", data.thumbnailFile)
+        // Prepare JSON data with base64 thumbnail
+        const requestData = {
+            name: data.name,
+            shortDesc: data.shortDesc,
+            longDesc: data.longDesc,
+            thumbnail: data.thumbnail // base64 string
+        };
 
+        try {
+            let response;
+            if (editData) {
+                response = await updateContinent(requestData, editData.id);
             } else {
-                let fileData=data.thumbnail.split('/')
-                let filename=fileData.pop()
-                formData.append("thumbnail", filename)
+                response = await addContinent(requestData);
             }
-            try {
-                    let resposne = await updateContinent(formData, editData.id)
-                    let responseData = resposne.data
-                    setSuccessMessage(responseData.message)
-                    setClearData(true)
-                    setDrawerOpen(false)
-                    setShowSuccess(true)
-            } catch (error: any) {
-
-                setEditData(null)
-                setDrawerOpen(false)
-                setShowError(true)
-                let erroStack = error.response.data
-                setErrorMessage(erroStack.message);
-                  setClearData(true)
-                setSuccessMessage("");
-            }
-
-        } else {
-            const formData = new FormData()
-            formData.append("name", data.name)
-            formData.append("shortDesc", data.shortDesc)
-            formData.append("longDesc", data.longDesc)
-            formData.append("thumbnail", data.thumbnailFile)
-            try {
-                let resposne = await addContinent(formData)
-                let responseData = resposne.data
-                setSuccessMessage(responseData.message)
-                setClearData(true)
-                setDrawerOpen(false)
-                setShowSuccess(true)
-
-            } catch (error: any) {
-                let erroStack = error.response?.data
-                setShowError(true)
-                setErrorMessage(erroStack?.message || 'Unknown Error');
-                                  setClearData(true)
-
-                setSuccessMessage("");
-            }
-
+            
+            let responseData = response.data;
+            setSuccessMessage(responseData.message);
+            setClearData(true);
+            setDrawerOpen(false);
+            setShowSuccess(true);
+        } catch (error: any) {
+            setEditData(null);
+            setDrawerOpen(false);
+            setShowError(true);
+            let erroStack = error.response?.data;
+            setErrorMessage(erroStack?.message || 'Unknown Error');
+            setClearData(true);
+            setSuccessMessage("");
         }
-
     }
 
     return (
@@ -184,13 +186,17 @@ const ContinentPage: React.FC = () => {
                                     <td>{index + 1}</td>
                                     <td>
                                         <img
-                                            src={`${BASE_URL}/${continent.thumbnail}`}
+                                            src={formatThumbnailForDisplay(continent.thumbnail)}
                                             alt={continent.name}
                                             style={{
                                                 width: 60,
                                                 height: 40,
                                                 objectFit: "cover",
                                                 borderRadius: "6px",
+                                            }}
+                                            onError={(e) => {
+                                                // Fallback if base64 is invalid
+                                                (e.target as HTMLImageElement).src = '';
                                             }}
                                         />
                                     </td>

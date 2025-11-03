@@ -67,51 +67,53 @@ const HotelPage: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("shortDesc", data.shortDesc);
-      formData.append("longDesc", data.longDesc);
-      formData.append("rating", data.rating);
-      formData.append("priceRange", data.priceRange);
-      formData.append("checkInTime", data.checkInTime);
-      formData.append("checkOutTime", data.checkOutTime);
-      formData.append("contactNumber", data.contactNumber);
-      formData.append("email", data.email);
-      formData.append("website", data.website);
+      // Prepare JSON data with base64 thumbnail (like ContinentPage/CountryPage/StatePage/CityPage/AttractionPage/RestaurantPage)
+      const requestData: any = {
+        name: data.name,
+        shortDesc: data.shortDesc,
+        longDesc: data.longDesc,
+        rating: data.rating || "",
+        priceRange: data.priceRange || "",
+        checkInTime: data.checkInTime || "",
+        checkOutTime: data.checkOutTime || "",
+        contactNumber: data.contactNumber || "",
+        email: data.email || "",
+        website: data.website || "",
+        continentId: data.continent,
+        countryId: data.country,
+        stateId: data.state,
+        cityId: data.city,
+        continent: getNameById(continents, data.continent),
+        country: getNameById(countries, data.country),
+        state: getNameById(states, data.state),
+        city: getNameById(cities, data.city),
+        roomTypes: Array.isArray(data.roomTypes) ? data.roomTypes : [],
+        amenities: Array.isArray(data.amenities) ? data.amenities : [],
+        facilities: Array.isArray(data.facilities) ? data.facilities : [],
+        popularFor: Array.isArray(data.popularFor) ? data.popularFor : [],
+        highlights: Array.isArray(data.highlights) ? data.highlights : [],
+        tips: Array.isArray(data.tips) ? data.tips : [],
+        bestTimeToVisit: data.bestTimeToVisit || {},
+        location: {
+          address: data.location?.address || "",
+          latitude: data.location?.latitude || "",
+          longitude: data.location?.longitude || "",
+          nearbyAttractions: data.location?.nearbyAttractions || []
+        }
+      };
 
-      formData.append("continentId", data.continent);
-      formData.append("countryId", data.country);
-      formData.append("stateId", data.state);
-      formData.append("cityId", data.city);
-
-      formData.append("continent", getNameById(continents, data.continent));
-      formData.append("country", getNameById(countries, data.country));
-      formData.append("state", getNameById(states, data.state));
-      formData.append("city", getNameById(cities, data.city));
-
-      formData.append("roomTypes", JSON.stringify(data.roomTypes || []));
-      formData.append("amenities", JSON.stringify(data.amenities || []));
-      formData.append("facilities", JSON.stringify(data.facilities || []));
-      formData.append("popularFor", JSON.stringify(data.popularFor || []));
-      formData.append("highlights", JSON.stringify(data.highlights || []));
-      formData.append("tips", JSON.stringify(data.tips || []));
-
-      formData.append("bestTimeToVisit", JSON.stringify(data.bestTimeToVisit || {}));
-
-      formData.append("location", JSON.stringify({
-        address: data.location?.address || "",
-        latitude: data.location?.latitude || "",
-        longitude: data.location?.longitude || "",
-        nearbyAttractions: data.location?.nearbyAttractions || [],
-      }));
-
-      if (data.thumbnailFile) {
-        formData.append("thumbnail", data.thumbnailFile);
+      // Only include thumbnail if it's a valid base64 image (starts with data:image and is substantial)
+      // If editing and no new image uploaded, backend will keep existing thumbnail
+      if (data.thumbnail && data.thumbnail.startsWith('data:image') && data.thumbnail.length > 100) {
+        requestData.thumbnail = data.thumbnail;
+      } else if (!editData) {
+        // For new hotel, thumbnail is required (validated in drawer)
+        requestData.thumbnail = data.thumbnail || null;
       }
 
       const response = editData
-        ? await updateHotel(formData, editData.id)
-        : await addHotel(formData);
+        ? await updateHotel(requestData, editData.id)
+        : await addHotel(requestData);
 
       setAlert({ type: "success", message: response.data.message });
       setDrawerOpen(false);
@@ -126,6 +128,36 @@ const HotelPage: React.FC = () => {
   const getNameById = (list: any[], id: string) => {
     const found = list.find((item) => item.id === id);
     return found ? found.name : "";
+  };
+
+  // Helper function to format thumbnail for display (like ContinentPage/CountryPage/StatePage/CityPage/AttractionPage/RestaurantPage)
+  const formatThumbnailForDisplay = (thumbnail: string): string => {
+    if (!thumbnail) return '';
+    
+    // If it already starts with data:image, use it directly
+    if (thumbnail.startsWith('data:image')) {
+      return thumbnail;
+    }
+    
+    // If it contains "data:image" (backend might have prefixed it), extract the data URL part
+    const dataImageIndex = thumbnail.indexOf('data:image');
+    if (dataImageIndex !== -1) {
+      // Extract everything from "data:image" onwards
+      return thumbnail.substring(dataImageIndex);
+    }
+    
+    // If it starts with assets/ or is a path, use BASE_URL
+    if (thumbnail.startsWith('assets/')) {
+      return `${BASE_URL}/${thumbnail}`;
+    }
+    
+    // If it's pure base64 (no prefix), add the data URL prefix
+    if (thumbnail.length > 100 && !thumbnail.includes('/')) {
+      return `data:image/jpeg;base64,${thumbnail}`;
+    }
+    
+    // Fallback: assume it's a path
+    return `${BASE_URL}/${thumbnail}`;
   };
 
   const paginatedHotels = hotels.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -169,13 +201,17 @@ const HotelPage: React.FC = () => {
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>
                   <img
-                    src={`${BASE_URL}/${hotel.thumbnail}`}
+                    src={formatThumbnailForDisplay(hotel.thumbnail)}
                     alt={hotel.name}
                     style={{
                       width: 60,
                       height: 40,
                       objectFit: "cover",
                       borderRadius: "6px",
+                    }}
+                    onError={(e) => {
+                      // Fallback if base64 is invalid
+                      (e.target as HTMLImageElement).src = '';
                     }}
                   />
                 </td>

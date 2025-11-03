@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Continent, Country, State, City } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 type Props = {
   show: boolean;
@@ -33,7 +33,8 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
   const [title, setTitle] = useState("");
   const [overview, setOverview] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [highlights, setHighlights] = useState<string[]>([]);
   const [travelTips, setTravelTips] = useState<string[]>([]);
@@ -79,18 +80,43 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
   const filteredCities = (stateId: string) =>
     cityData.filter((ele) => ele.stateId === stateId);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setThumbnailFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setThumbnail(reader.result as string);
-    reader.readAsDataURL(file);
+    
+    const validation = validateImageFile(file, 10);
+    if (!validation.isValid) {
+      alert(validation.error);
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
+    setIsCompressing(true);
+    try {
+      const compressedBase64 = await compressImage(file, 600, 600, 300);
+      const sizeInKB = getBase64SizeKB(compressedBase64);
+      if (sizeInKB > 400) {
+        alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+      }
+      setThumbnail(compressedBase64);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try again.');
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleRemoveImage = () => {
     setThumbnail("");
-    setThumbnailFile(null);
+    if(fileInputRef.current){
+      fileInputRef.current.value = "";
+    }
   };
 
   useEffect(() => {
@@ -101,16 +127,16 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
       setCity(editData.cityId || "");
       setTitle(editData.title || "");
       setOverview(editData.overview || "");
-      setThumbnail(
-        editData.thumbnail ? `${BASE_URL}/${editData.thumbnail}` : ""
-      );
+      const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+      setThumbnail(formattedThumbnail);
       setHighlights(editData.highlights || []);
       setTravelTips(editData.travelTips || []);
       setBestMonths(editData.bestTimeToVisit?.months || []);
       setBestReason(editData.bestTimeToVisit?.reason || "");
-      setAttractions(editData.attractions || []);
-      setHotels(editData.hotels || []);
-      setRestaurants(editData.restaurants || []);
+      // Extract IDs from objects if they're objects, otherwise use as-is
+      setAttractions((editData.attractions || []).map((item: any) => typeof item === 'object' && item.id ? item.id : item));
+      setHotels((editData.hotels || []).map((item: any) => typeof item === 'object' && item.id ? item.id : item));
+      setRestaurants((editData.restaurants || []).map((item: any) => typeof item === 'object' && item.id ? item.id : item));
       setAvgRating(editData.avgRating?.toString() || "");
       setIsFeatured(editData.isFeatured || false);
       setStatus(editData.status || "Active");
@@ -137,6 +163,16 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate thumbnail for new entries
+    if (!editData && !thumbnail) {
+      alert("Please select a thumbnail image");
+      return;
+    }
+    
+    // Only send thumbnail if it's a valid base64 data URL
+    const thumbnailToSend = thumbnail && thumbnail.startsWith("data:image") && thumbnail.length > 100 ? thumbnail : undefined;
+    
     onSave({
       continent,
       country,
@@ -144,8 +180,7 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
       city,
       title,
       overview,
-      thumbnail,
-      thumbnailFile,
+      thumbnail: thumbnailToSend,
       highlights,
       travelTips,
       bestTimeToVisit: { months: bestMonths, reason: bestReason },
@@ -285,9 +320,16 @@ export const DestinationGuideDrawer: React.FC<Props> = ({
                 type="file"
                 className="form-control"
                 accept="image/*"
+                ref={fileInputRef}
                 onChange={handleImageUpload}
+                disabled={isCompressing}
               />
-              {thumbnail && (
+              {isCompressing && (
+                <div className="mt-2 text-center text-muted">
+                  <small>Compressing image...</small>
+                </div>
+              )}
+              {thumbnail && !isCompressing && (
                 <div className="mt-3 text-center">
                   <img
                     src={thumbnail}

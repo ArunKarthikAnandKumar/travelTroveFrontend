@@ -48,6 +48,36 @@ const CityPage: React.FC = () => {
     }
   };
 
+  // Helper function to format thumbnail for display (like ContinentPage/CountryPage/StatePage)
+  const formatThumbnailForDisplay = (thumbnail: string): string => {
+    if (!thumbnail) return '';
+    
+    // If it already starts with data:image, use it directly
+    if (thumbnail.startsWith('data:image')) {
+      return thumbnail;
+    }
+    
+    // If it contains "data:image" (backend might have prefixed it), extract the data URL part
+    const dataImageIndex = thumbnail.indexOf('data:image');
+    if (dataImageIndex !== -1) {
+      // Extract everything from "data:image" onwards
+      return thumbnail.substring(dataImageIndex);
+    }
+    
+    // If it starts with assets/ or is a path, use BASE_URL
+    if (thumbnail.startsWith('assets/')) {
+      return `${BASE_URL}/${thumbnail}`;
+    }
+    
+    // If it's pure base64 (no prefix), add the data URL prefix
+    if (thumbnail.length > 100 && !thumbnail.includes('/')) {
+      return `data:image/jpeg;base64,${thumbnail}`;
+    }
+    
+    // Fallback: assume it's a path
+    return `${BASE_URL}/${thumbnail}`;
+  };
+
   const paginatedCities = cities.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -91,60 +121,51 @@ const CityPage: React.FC = () => {
     const country = countries.find((c) => c.id === data.country);
     const state = states.find((s) => s.id === data.state);
 
-    console.log(data);
-
     if (!continent || !country || !state) {
       setAlert({ type: "danger", message: "Invalid location selection" });
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("shortDesc", data.shortDesc);
-    formData.append("longDesc", data.longDesc);
-    formData.append("continentId", continent.id);
-    formData.append("countryId", country.id);
-    formData.append("stateId", state.id);
-    formData.append("continent", continent.name);
-    formData.append("country", country.name);
-    formData.append("state", state.name);
+    // Prepare JSON data with base64 thumbnail (like ContinentPage/CountryPage/StatePage)
+    const requestData: any = {
+      name: data.name,
+      shortDesc: data.shortDesc,
+      longDesc: data.longDesc,
+      continentId: continent.id,
+      continent: continent.name,
+      countryId: country.id,
+      country: country.name,
+      stateId: state.id,
+      state: state.name,
+      popularFor: data.popularFor || "",
+      highlights: Array.isArray(data.highlights)
+        ? data.highlights
+        : (data.highlights || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+      tips: Array.isArray(data.tips)
+        ? data.tips
+        : (data.tips || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+      adventureActivities: Array.isArray(data.adventureActivities)
+        ? data.adventureActivities
+        : (data.adventureActivities || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+      bestTimeToVisit: data.bestTimeToVisit || {},
+      history: data.history || "",
+      shortDescImage: data.shortDescImage || null,
+      longDescImage: data.longDescImage || null,
+      historyImage: data.historyImage || null
+    };
 
-    // Convert comma-separated or array data into clean JSON arrays
-    formData.append(
-      "highlights",
-      Array.isArray(data.highlights)
-        ?data.highlights
-        : JSON.stringify((data.highlights || "").split(",").map((s: string) => s.trim()).filter(Boolean))
-    );
-
-    formData.append(
-      "tips",
-      Array.isArray(data.tips)
-        ? JSON.stringify(data.tips)
-        : JSON.stringify((data.tips || "").split(",").map((s: string) => s.trim()).filter(Boolean))
-    );
-
-    formData.append(
-      "adventureActivities",
-      Array.isArray(data.adventureActivities)
-        ? JSON.stringify(data.adventureActivities)
-        : JSON.stringify((data.adventureActivities || "").split(",").map((s: string) => {
-            return s.trim();
-        }).filter(Boolean))
-    );
-
-    formData.append(
-      "bestTimeToVisit",
-      JSON.stringify(data.bestTimeToVisit || [])
-    );
-
-    if (data.thumbnailFile) {
-      formData.append("thumbnail", data.thumbnailFile);
+    // Only include thumbnail if it's a valid base64 image (starts with data:image and is substantial)
+    // If editing and no new image uploaded, backend will keep existing thumbnail
+    if (data.thumbnail && data.thumbnail.startsWith('data:image') && data.thumbnail.length > 100) {
+      requestData.thumbnail = data.thumbnail;
+    } else if (!editData) {
+      // For new city, thumbnail is required (validated in drawer)
+      requestData.thumbnail = data.thumbnail || null;
     }
 
     const response = editData
-      ? await updateCity(formData, editData.id)
-      : await addCity(formData);
+      ? await updateCity(requestData, editData.id)
+      : await addCity(requestData);
 
     setAlert({ type: "success", message: response.data.message });
     setDrawerOpen(false);
@@ -197,13 +218,17 @@ const CityPage: React.FC = () => {
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>
                   <img
-                    src={`${BASE_URL}/${city.thumbnail}`}
+                    src={formatThumbnailForDisplay(city.thumbnail)}
                     alt={city.name}
                     style={{
                       width: 60,
                       height: 40,
                       objectFit: "cover",
                       borderRadius: "6px",
+                    }}
+                    onError={(e) => {
+                      // Fallback if base64 is invalid
+                      (e.target as HTMLImageElement).src = '';
                     }}
                   />
                 </td>

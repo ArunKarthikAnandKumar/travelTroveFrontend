@@ -67,29 +67,39 @@ const RestaurantPage: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("shortDesc", data.shortDesc);
-      formData.append("longDesc", data.longDesc);
-      formData.append("averageCost", data.averageCost);
-      formData.append("openingHours", data.openingHours);
-      formData.append("contactNumber", data.contactNumber);
-      formData.append("cuisineType", JSON.stringify(data.cuisineType || []));
-      formData.append("facilities", JSON.stringify(data.facilities || []));
-      formData.append("popularFor", JSON.stringify(data.popularFor || []));
-      formData.append("continentId", data.continent);
-      formData.append("countryId", data.country);
-      formData.append("stateId", data.state);
-      formData.append("cityId", data.city);
-      formData.append("continent", getNameById(continents, data.continent));
-      formData.append("country", getNameById(countries, data.country));
-      formData.append("state", getNameById(states, data.state));
-      formData.append("city", getNameById(cities, data.city));
-      if (data.thumbnailFile) formData.append("thumbnail", data.thumbnailFile);
+      // Prepare JSON data with base64 thumbnail (like ContinentPage/CountryPage/StatePage/CityPage/AttractionPage)
+      const requestData: any = {
+        name: data.name,
+        shortDesc: data.shortDesc,
+        longDesc: data.longDesc,
+        averageCost: data.averageCost || "",
+        openingHours: data.openingHours || "",
+        contactNumber: data.contactNumber || "",
+        continentId: data.continent,
+        countryId: data.country,
+        stateId: data.state,
+        cityId: data.city,
+        continent: getNameById(continents, data.continent),
+        country: getNameById(countries, data.country),
+        state: getNameById(states, data.state),
+        city: getNameById(cities, data.city),
+        cuisineType: Array.isArray(data.cuisineType) ? data.cuisineType : [],
+        facilities: Array.isArray(data.facilities) ? data.facilities : [],
+        popularFor: Array.isArray(data.popularFor) ? data.popularFor : []
+      };
+
+      // Only include thumbnail if it's a valid base64 image (starts with data:image and is substantial)
+      // If editing and no new image uploaded, backend will keep existing thumbnail
+      if (data.thumbnail && data.thumbnail.startsWith('data:image') && data.thumbnail.length > 100) {
+        requestData.thumbnail = data.thumbnail;
+      } else if (!editData) {
+        // For new restaurant, thumbnail is required (validated in drawer)
+        requestData.thumbnail = data.thumbnail || null;
+      }
 
       const response = editData
-        ? await updateRestaurant(formData, editData.id)
-        : await addRestaurant(formData);
+        ? await updateRestaurant(requestData, editData.id)
+        : await addRestaurant(requestData);
 
       setAlert({ type: "success", message: response.data.message });
       setDrawerOpen(false);
@@ -104,6 +114,36 @@ const RestaurantPage: React.FC = () => {
   const getNameById = (list: any[], id: string) => {
     const found = list.find((item) => item.id === id);
     return found ? found.name : "";
+  };
+
+  // Helper function to format thumbnail for display (like ContinentPage/CountryPage/StatePage/CityPage/AttractionPage)
+  const formatThumbnailForDisplay = (thumbnail: string): string => {
+    if (!thumbnail) return '';
+    
+    // If it already starts with data:image, use it directly
+    if (thumbnail.startsWith('data:image')) {
+      return thumbnail;
+    }
+    
+    // If it contains "data:image" (backend might have prefixed it), extract the data URL part
+    const dataImageIndex = thumbnail.indexOf('data:image');
+    if (dataImageIndex !== -1) {
+      // Extract everything from "data:image" onwards
+      return thumbnail.substring(dataImageIndex);
+    }
+    
+    // If it starts with assets/ or is a path, use BASE_URL
+    if (thumbnail.startsWith('assets/')) {
+      return `${BASE_URL}/${thumbnail}`;
+    }
+    
+    // If it's pure base64 (no prefix), add the data URL prefix
+    if (thumbnail.length > 100 && !thumbnail.includes('/')) {
+      return `data:image/jpeg;base64,${thumbnail}`;
+    }
+    
+    // Fallback: assume it's a path
+    return `${BASE_URL}/${thumbnail}`;
   };
 
   const paginatedRestaurants = restaurants.slice(
@@ -150,13 +190,17 @@ const RestaurantPage: React.FC = () => {
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>
                   <img
-                    src={`${BASE_URL}/${item.thumbnail}`}
+                    src={formatThumbnailForDisplay(item.thumbnail)}
                     alt={item.name}
                     style={{
                       width: 60,
                       height: 40,
                       objectFit: "cover",
                       borderRadius: "6px",
+                    }}
+                    onError={(e) => {
+                      // Fallback if base64 is invalid
+                      (e.target as HTMLImageElement).src = '';
                     }}
                   />
                 </td>

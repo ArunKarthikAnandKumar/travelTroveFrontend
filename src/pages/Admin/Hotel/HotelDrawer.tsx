@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Continent, Country, State, City } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 type Props = {
   show: boolean;
@@ -33,7 +33,8 @@ export const HotelDrawer: React.FC<Props> = ({
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [rating, setRating] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [checkInTime, setCheckInTime] = useState("");
@@ -93,18 +94,43 @@ export const HotelDrawer: React.FC<Props> = ({
   const filteredCities = (stateId: string) =>
     cityData.filter((ele) => ele.stateId === stateId);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setThumbnailFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setThumbnail(reader.result as string);
-    reader.readAsDataURL(file);
+    
+    const validation = validateImageFile(file, 10);
+    if (!validation.isValid) {
+      alert(validation.error);
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
+    setIsCompressing(true);
+    try {
+      const compressedBase64 = await compressImage(file, 600, 600, 300);
+      const sizeInKB = getBase64SizeKB(compressedBase64);
+      if (sizeInKB > 400) {
+        alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+      }
+      setThumbnail(compressedBase64);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try again.');
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleRemoveImage = () => {
     setThumbnail("");
-    setThumbnailFile(null);
+    if(fileInputRef.current){
+      fileInputRef.current.value = "";
+    }
   };
 
   useEffect(() => {
@@ -116,9 +142,9 @@ export const HotelDrawer: React.FC<Props> = ({
       setCity(editData.cityId || "");
       setShortDesc(editData.shortDesc || "");
       setLongDesc(editData.longDesc || "");
-      setThumbnail(
-        editData.thumbnail ? `${BASE_URL}/${editData.thumbnail}` : ""
-      );
+      // Format thumbnail for display - extract base64 if backend added path prefix
+      const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+      setThumbnail(formattedThumbnail);
       setRating(editData.rating || "");
       setPriceRange(editData.priceRange || "");
       setRoomTypes(editData.roomTypes || []);
@@ -138,7 +164,36 @@ export const HotelDrawer: React.FC<Props> = ({
       setTips(editData.tips || []);
       setBestMonths(editData.bestTimeToVisit?.months || []);
       setBestReason(editData.bestTimeToVisit?.reason || "");
-    } else {
+    }else if(clearData){
+      setName("");
+      setContinent("");
+      setCountry("");
+      setState("");
+      setCity("");
+      setShortDesc("");
+      setLongDesc("");
+      setThumbnail("");
+      setRating("");
+      setPriceRange("");
+      setRoomTypes([]);
+      setAmenities([]);
+      setFacilities([]);
+      setPopularFor([]);
+      setCheckInTime("");
+      setCheckOutTime("");
+      setContactNumber("");
+      setEmail("");
+      setWebsite("");
+      setAddress("");
+      setLatitude("");
+      setLongitude("");
+      setNearbyAttractions([]);
+      setHighlights([]);
+      setTips([]);
+      setBestMonths([]);
+      setBestReason("");
+    } 
+    else {
       setName("");
       setContinent("");
       setCountry("");
@@ -171,7 +226,9 @@ export const HotelDrawer: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    
+    // Prepare data object
+    const submitData: any = {
       name,
       continent,
       country,
@@ -179,8 +236,6 @@ export const HotelDrawer: React.FC<Props> = ({
       city,
       shortDesc,
       longDesc,
-      thumbnail,
-      thumbnailFile,
       rating,
       priceRange,
       roomTypes,
@@ -196,7 +251,26 @@ export const HotelDrawer: React.FC<Props> = ({
       highlights,
       tips,
       bestTimeToVisit: { months: bestMonths, reason: bestReason },
-    });
+    };
+    
+    // Only send thumbnail if it's a valid base64 data URL (newly uploaded image)
+    // Check if thumbnail starts with data:image and has substantial content
+    if (thumbnail && thumbnail.startsWith('data:image') && thumbnail.length > 100) {
+      // Final size check before submitting
+      const sizeInKB = getBase64SizeKB(thumbnail);
+      if (sizeInKB > 500) {
+        alert(`Image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB. Please select a smaller image.`);
+        return;
+      }
+      submitData.thumbnail = thumbnail;
+    } else if (!editData) {
+      // Require file when adding new hotel
+      alert("Please select a thumbnail image");
+      return;
+    }
+    // If editing and no new image, don't include thumbnail (backend will keep existing)
+    
+    onSave(submitData);
   };
 
   return (
@@ -346,9 +420,16 @@ export const HotelDrawer: React.FC<Props> = ({
                 type="file"
                 className="form-control"
                 accept="image/*"
+                ref={fileInputRef}
                 onChange={handleImageUpload}
+                disabled={isCompressing}
               />
-              {thumbnail && (
+              {isCompressing && (
+                <div className="mt-2 text-center text-muted">
+                  <small>Compressing image...</small>
+                </div>
+              )}
+              {thumbnail && !isCompressing && (
                 <div className="mt-3 text-center">
                   <img
                     src={thumbnail}

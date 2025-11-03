@@ -8,6 +8,7 @@ import {
   fetchAllItineraries
 } from "../../../api/adminApi";
 import { BASE_URL } from "../../../utils/constatnts";
+import { formatThumbnailForDisplay } from "../../../utils/imageUtils";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
@@ -117,19 +118,22 @@ const TravelGroupPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (formData: FormData) => {
-    console.log(formData)
+  const handleSubmit = async (data: any) => {
+    console.log(data)
     const adminId = typeof window !== "undefined" ? window.sessionStorage.getItem("adminId") : null;
-    if (adminId) {
-      formData.append("groupAdmin", adminId);
-    }
+    
+    // Prepare JSON data with base64 thumbnail
+    const requestData = {
+      ...data,
+      groupAdmin: adminId || null,
+    };
 
     try {
       if (editData && editData._id) {
-        await updateTravelGroup(formData, editData._id);
+        await updateTravelGroup(requestData, editData._id);
         setAlert({ type: "success", message: "Travel group updated successfully" });
       } else {
-        await addTravelGroup(formData);
+        await addTravelGroup(requestData);
         setAlert({ type: "success", message: "Travel group created successfully" });
       }
       setDrawerOpen(false);
@@ -149,7 +153,7 @@ const TravelGroupPage: React.FC = () => {
         const imagePath = typeof thumbnail === 'string' ? thumbnail : '';
         return imagePath ? (
           <img
-            src={`${BASE_URL}/${imagePath}`}
+            src={formatThumbnailForDisplay(imagePath, BASE_URL)}
             alt="Thumbnail"
             style={{ width: '50px', height: '50px', objectFit: 'cover' }}
           />

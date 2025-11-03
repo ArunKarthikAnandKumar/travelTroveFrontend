@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { Continent } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 
 type Props = {
@@ -22,16 +22,19 @@ export const ContinentDrawer: React.FC<Props> = ({
     const [name, setName] = useState("");
     const [shortDesc, setShortDesc] = useState("");
     const [longDesc, setLongDesc] = useState("");
-    const [thumbnail, setThumbnail] = useState<string>("");
-    const [thumbnailFile,setThumbnailFile]=useState<File|null>(null)
+    const [thumbnail, setThumbnail] = useState<string>(""); // base64 string
+    const [isCompressing, setIsCompressing] = useState(false);
     const fileInputRef=useRef<HTMLInputElement>(null)
+
 
     useEffect(() => {
         if (editData) {
             setName(editData.name);
             setShortDesc(editData.shortDesc);
             setLongDesc(editData.longDesc);
-            setThumbnail(`${BASE_URL}/${editData.thumbnail}`);
+            // Format thumbnail for display - extract base64 if backend added path prefix
+            const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+            setThumbnail(formattedThumbnail);
            
         }else if(clearData){
                 setName("");
@@ -48,32 +51,77 @@ export const ContinentDrawer: React.FC<Props> = ({
         }
     }, [editData,clearData]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setThumbnailFile(file)
-        const reader = new FileReader();
-        reader.onloadend = () => setThumbnail(reader.result as string);
-        reader.readAsDataURL(file);
-    };
-    const handleRemoveImage = () => {
         
+        // Validate file
+        const validation = validateImageFile(file, 10);
+        if (!validation.isValid) {
+            alert(validation.error);
+            if(fileInputRef.current){
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+        
+        setIsCompressing(true);
+        try {
+            // Compress to max 300KB (base64)
+            const compressedBase64 = await compressImage(file, 600, 600, 300);
+            
+            // Validate final size before setting
+            const sizeInKB = getBase64SizeKB(compressedBase64);
+            
+            // Warn if still large but allow up to 400KB
+            if (sizeInKB > 400) {
+                alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+            }
+            
+            setThumbnail(compressedBase64);
+        } catch (error) {
+            console.error('Error compressing image:', error);
+            alert('Error processing image. Please try again.');
+            if(fileInputRef.current){
+                fileInputRef.current.value = "";
+            }
+        } finally {
+            setIsCompressing(false);
+        }
+    };
+    
+    const handleRemoveImage = () => {
         setThumbnail("");
-        setThumbnailFile(null);
         if(fileInputRef.current){
             fileInputRef.current.value=""
         }
     }
+    
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !shortDesc.trim() || !longDesc.trim()) return;
+        // Require file when adding new continent
+        if (!editData && !thumbnail) {
+            alert("Please select a thumbnail image");
+            return;
+        }
+        
+        // Final size check before submitting
+        if (thumbnail) {
+            const sizeInKB = getBase64SizeKB(thumbnail);
+            if (sizeInKB > 500) {
+                alert(`Image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB. Please select a smaller image.`);
+                return;
+            }
+        }
+        
         onSave({
             id: editData ? editData.id : `Date.now()`,
             name,
             shortDesc,
             longDesc,
-            thumbnail,
-            thumbnailFile,
+            thumbnail, // Send base64 string directly
         });
     };
     return (
@@ -135,9 +183,16 @@ export const ContinentDrawer: React.FC<Props> = ({
               type="file"
               accept="image/*"
               className="form-control"
-               onChange={handleImageUpload}
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              disabled={isCompressing}
             />
-            {thumbnail && (
+            {isCompressing && (
+              <div className="mt-2 text-center text-muted">
+                <small>Compressing image...</small>
+              </div>
+            )}
+            {thumbnail && !isCompressing && (
               <div className="mt-3 text-center">
                 <img
                   src={thumbnail}

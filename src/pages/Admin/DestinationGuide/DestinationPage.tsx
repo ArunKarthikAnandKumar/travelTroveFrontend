@@ -10,6 +10,7 @@ import {
 } from "../../../api/adminApi";
 import AlertMessage from "../../../components/Common/AlertMessage";
 import { BASE_URL } from "../../../utils/constatnts";
+import { formatThumbnailForDisplay } from "../../../utils/imageUtils";
 
 const DestinationGuidePage: React.FC = () => {
   const [destinationGuides, setDestinationGuides] = useState<any[]>([]);
@@ -67,31 +68,36 @@ const DestinationGuidePage: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("overview", data.overview);
-      formData.append("continentId", data.continent);
-      formData.append("countryId", data.country);
-      formData.append("stateId", data.state);
-      formData.append("cityId", data.city);
-      formData.append("continent", getNameById(continents, data.continent));
-      formData.append("country", getNameById(countries, data.country));
-      formData.append("state", getNameById(states, data.state));
-      formData.append("city", getNameById(cities, data.city));
-      formData.append("highlights", JSON.stringify(data.highlights || []));
-      formData.append("travelTips", JSON.stringify(data.travelTips || []));
-      formData.append("bestTimeToVisit", JSON.stringify(data.bestTimeToVisit));
-      formData.append("attractions", JSON.stringify(data.attractions || []));
-      formData.append("hotels", JSON.stringify(data.hotels || []));
-      formData.append("restaurants", JSON.stringify(data.restaurants || []));
-      formData.append("avgRating", data.avgRating || "0");
-      formData.append("isFeatured", data.isFeatured ? "true" : "false");
-      formData.append("status", data.status || "Active");
-      if (data.thumbnailFile) formData.append("thumbnail", data.thumbnailFile);
+      const requestData: any = {
+        title: data.title,
+        overview: data.overview,
+        continentId: data.continent,
+        countryId: data.country,
+        stateId: data.state,
+        cityId: data.city,
+        continent: getNameById(continents, data.continent),
+        country: getNameById(countries, data.country),
+        state: getNameById(states, data.state),
+        city: getNameById(cities, data.city),
+        highlights: JSON.stringify(data.highlights || []),
+        travelTips: JSON.stringify(data.travelTips || []),
+        bestTimeToVisit: JSON.stringify(data.bestTimeToVisit),
+        attractions: JSON.stringify(data.attractions || []),
+        hotels: JSON.stringify(data.hotels || []),
+        restaurants: JSON.stringify(data.restaurants || []),
+        avgRating: data.avgRating || "0",
+        isFeatured: data.isFeatured ? "true" : "false",
+        status: data.status || "Active",
+      };
+
+      // Only include thumbnail if it's a new base64 image or required for new entry
+      if (data.thumbnail && data.thumbnail.startsWith("data:image") && data.thumbnail.length > 100) {
+        requestData.thumbnail = data.thumbnail;
+      }
 
       const response = editData
-        ? await updateDestinationGuide(formData, editData.id)
-        : await addDestinationGuide(formData);
+        ? await updateDestinationGuide(requestData, editData.id)
+        : await addDestinationGuide(requestData);
 
       setAlert({ type: "success", message: response.data.message });
       setDrawerOpen(false);
@@ -152,13 +158,17 @@ const DestinationGuidePage: React.FC = () => {
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>
                   <img
-                    src={`${BASE_URL}/${item.thumbnail}`}
+                    src={formatThumbnailForDisplay(item.thumbnail, BASE_URL)}
                     alt={item.title}
                     style={{
                       width: 60,
                       height: 40,
                       objectFit: "cover",
                       borderRadius: "6px",
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "";
+                      (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 </td>

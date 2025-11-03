@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { Continent, Country, State } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 type Props = {
   show: boolean;
@@ -31,15 +31,12 @@ export const CityDrawer: React.FC<Props> = ({
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [shortDescImage, setShortDescImage] = useState("");
-  const [shortDescFile, setShortDescFile] = useState<File | null>(null);
   const [longDescImage, setLongDescImage] = useState("");
-  const [longDescFile, setLongDescFile] = useState<File | null>(null);
-  const [historyFile, setHistoryFile] = useState<File | null>(null);
+  const [historyImage, seHistoryImage] = useState("");
+  const [compressingField, setCompressingField] = useState<string | null>(null);
   const [highlights, setHighlights] = useState<string[]>([]);
   const [history, setHistory] = useState("");
-    const [historyImage, seHistoryImage] = useState("");
   const [tips, setTips] = useState<string[]>([]);
   const [adventureActivities, setAdventureActivities] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
@@ -80,24 +77,39 @@ export const CityDrawer: React.FC<Props> = ({
   const filteredStates = (countryId: string) =>
     stateData.filter((ele) => ele.countryId === countryId);
 
-  const handleImageUploadGeneric = (
+  const handleImageUploadGeneric = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: (v: string) => void,
-    setFile: (f: File | null) => void
+    fieldName: string
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    
+    const validation = validateImageFile(file, 10);
+    if (!validation.isValid) {
+      alert(validation.error);
+      return;
+    }
+    
+    setCompressingField(fieldName);
+    try {
+      const compressedBase64 = await compressImage(file, 600, 600, 300);
+      const sizeInKB = getBase64SizeKB(compressedBase64);
+      if (sizeInKB > 400) {
+        alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+      }
+      setPreview(compressedBase64);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try again.');
+    } finally {
+      setCompressingField(null);
+    }
   };
   const handleRemoveGenericImage = (
-    setPreview: (v: string) => void,
-    setFile: (f: File | null) => void
+    setPreview: (v: string) => void
   ) => {
     setPreview("");
-    setFile(null);
   };
 
   
@@ -111,14 +123,28 @@ export const CityDrawer: React.FC<Props> = ({
       setPopularFor(editData.popularFor || "");
       setShortDesc(editData.shortDesc || "");
       setLongDesc(editData.longDesc || "");
-      setThumbnail(editData.thumbnail ? `${BASE_URL}/${editData.thumbnail}` : "");
+      // Format thumbnail for display - extract base64 if backend added path prefix
+      const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+      setThumbnail(formattedThumbnail);
+      if(editData.shortDescImage) {
+        const formattedShort = formatThumbnailForDisplay(editData.shortDescImage || "");
+        setShortDescImage(formattedShort);
+      }
+      if(editData.longDescImage) {
+        const formattedLong = formatThumbnailForDisplay(editData.longDescImage || "");
+        setLongDescImage(formattedLong);
+      }
+      if(editData.historyImage) {
+        const formattedHistory = formatThumbnailForDisplay(editData.historyImage || "");
+        seHistoryImage(formattedHistory);
+      }
       setHighlights(editData.highlights || []);
       setHistory(editData.history || "");
       setTips(editData.tips || []);
       setAdventureActivities(editData.adventureActivities || []);
       setMonths(editData.bestTimeToVisit?.months || []);
       setReason(editData.bestTimeToVisit?.reason || "");
-    } else {
+    }else if(clearData){
       setName("");
       setContinent("");
       setCountry("");
@@ -127,6 +153,28 @@ export const CityDrawer: React.FC<Props> = ({
       setShortDesc("");
       setLongDesc("");
       setThumbnail("");
+      setShortDescImage("");
+      setLongDescImage("");
+      seHistoryImage("");
+      setHighlights([]);
+      setHistory("");
+      setTips([]);
+      setAdventureActivities([]);
+      setMonths([]);
+      setReason("");
+    } 
+    else {
+      setName("");
+      setContinent("");
+      setCountry("");
+      setState("");
+      setPopularFor("");
+      setShortDesc("");
+      setLongDesc("");
+      setThumbnail("");
+      setShortDescImage("");
+      setLongDescImage("");
+      seHistoryImage("");
       setHighlights([]);
       setHistory("");
       setTips([]);
@@ -138,25 +186,70 @@ export const CityDrawer: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    
+    // Prepare data object
+    const submitData: any = {
       name,
       continent,
       country,
       state,
       popularFor,
       shortDesc,
-      shortDescImage,
       longDesc,
-      longDescImage,
-      historyImage,
-      thumbnail,
-      thumbnailFile,
       highlights,
       history,
       tips,
       adventureActivities,
       bestTimeToVisit: { months, reason },
-    });
+    };
+    
+    // Only send thumbnail if it's a valid base64 data URL (newly uploaded image)
+    // Check if thumbnail starts with data:image and has substantial content
+    if (thumbnail && thumbnail.startsWith('data:image') && thumbnail.length > 100) {
+      // Final size check before submitting
+      const sizeInKB = getBase64SizeKB(thumbnail);
+      if (sizeInKB > 500) {
+        alert(`Thumbnail image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB. Please select a smaller image.`);
+        return;
+      }
+      submitData.thumbnail = thumbnail;
+    } else if (!editData) {
+      // Require file when adding new city
+      alert("Please select a thumbnail image");
+      return;
+    }
+    // If editing and no new image, don't include thumbnail (backend will keep existing)
+    
+    // Handle other images (shortDescImage, longDescImage, historyImage)
+    // Only send if they are valid base64 data URLs
+    if (shortDescImage && shortDescImage.startsWith('data:image') && shortDescImage.length > 100) {
+      const sizeInKB = getBase64SizeKB(shortDescImage);
+      if (sizeInKB > 500) {
+        alert(`Short description image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB.`);
+        return;
+      }
+      submitData.shortDescImage = shortDescImage;
+    }
+    
+    if (longDescImage && longDescImage.startsWith('data:image') && longDescImage.length > 100) {
+      const sizeInKB = getBase64SizeKB(longDescImage);
+      if (sizeInKB > 500) {
+        alert(`Long description image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB.`);
+        return;
+      }
+      submitData.longDescImage = longDescImage;
+    }
+    
+    if (historyImage && historyImage.startsWith('data:image') && historyImage.length > 100) {
+      const sizeInKB = getBase64SizeKB(historyImage);
+      if (sizeInKB > 500) {
+        alert(`History image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB.`);
+        return;
+      }
+      submitData.historyImage = historyImage;
+    }
+    
+    onSave(submitData);
   };
 
  return (
@@ -278,10 +371,16 @@ export const CityDrawer: React.FC<Props> = ({
               accept="image/*"
               className="form-control"
               onChange={(e) =>
-                handleImageUploadGeneric(e, setThumbnail, setThumbnailFile)
+                handleImageUploadGeneric(e, setThumbnail, "thumbnail")
               }
+              disabled={compressingField === "thumbnail"}
             />
-            {thumbnail && (
+            {compressingField === "thumbnail" && (
+              <div className="mt-2 text-center text-muted">
+                <small>Compressing image...</small>
+              </div>
+            )}
+            {thumbnail && compressingField !== "thumbnail" && (
               <div className="mt-3 text-center">
                 <img
                   src={thumbnail}
@@ -293,7 +392,7 @@ export const CityDrawer: React.FC<Props> = ({
                   type="button"
                   className="btn btn-sm btn-outline-danger mt-2"
                   onClick={() =>
-                    handleRemoveGenericImage(setThumbnail, setThumbnailFile)
+                    handleRemoveGenericImage(setThumbnail)
                   }
                 >
                   Remove

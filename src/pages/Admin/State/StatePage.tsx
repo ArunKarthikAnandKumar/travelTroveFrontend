@@ -46,6 +46,36 @@ const StatePage: React.FC = () => {
     const pageSize = 5
     const pagCount = states?Math.ceil(states.length / pageSize):0
 
+    // Helper function to format thumbnail for display (like ContinentPage/CountryPage)
+    const formatThumbnailForDisplay = (thumbnail: string): string => {
+        if (!thumbnail) return '';
+        
+        // If it already starts with data:image, use it directly
+        if (thumbnail.startsWith('data:image')) {
+            return thumbnail;
+        }
+        
+        // If it contains "data:image" (backend might have prefixed it), extract the data URL part
+        const dataImageIndex = thumbnail.indexOf('data:image');
+        if (dataImageIndex !== -1) {
+            // Extract everything from "data:image" onwards
+            return thumbnail.substring(dataImageIndex);
+        }
+        
+        // If it starts with assets/ or is a path, use BASE_URL
+        if (thumbnail.startsWith('assets/')) {
+            return `${BASE_URL}/${thumbnail}`;
+        }
+        
+        // If it's pure base64 (no prefix), add the data URL prefix
+        if (thumbnail.length > 100 && !thumbnail.includes('/')) {
+            return `data:image/jpeg;base64,${thumbnail}`;
+        }
+        
+        // Fallback: assume it's a path
+        return `${BASE_URL}/${thumbnail}`;
+    };
+
     const paginatedData =states? states.slice(
         (currentPageSize - 1) * pageSize,
         currentPageSize * pageSize
@@ -93,75 +123,50 @@ const StatePage: React.FC = () => {
         let countryObj=countrys.find(ele=>ele.id==data.country)
         
         if(continentObj && countryObj){
-           if (editData) {
-            const formData = new FormData()
-            formData.append("name", data.name)
-            formData.append("continentId", continentObj.id)
-            formData.append("continent", continentObj.name)
-                 formData.append("countryId", countryObj.id)
-            formData.append("country", countryObj.name)
-            formData.append("popularFor",data.popularFor.toString())
-            formData.append("shortDesc", data.shortDesc)
-            formData.append("longDesc", data.longDesc)
-            if (data.thumbnailFile) {
-                formData.append("thumbnail", data.thumbnailFile)
+            // Prepare JSON data with base64 thumbnail (like ContinentPage/CountryPage)
+            const requestData: any = {
+                name: data.name,
+                shortDesc: data.shortDesc,
+                longDesc: data.longDesc,
+                continentId: continentObj.id,
+                continent: continentObj.name,
+                countryId: countryObj.id,
+                country: countryObj.name,
+                popularFor: data.popularFor.toString()
+            };
 
-            } else {
-                  let fileData=data.thumbnail.split('/')
-                let filename=fileData.pop()
-                formData.append("thumbnail", filename)
-            }
-            try {
-                let resposne = await updateState(formData, editData.id)
-                let responseData = resposne.data
-                setSuccessMessage(responseData.message)
-                setClearData(true)
-                setDrawerOpen(false)
-                setShowSuccess(true)
-            } catch (error: any) {
-
-                setEditData(null)
-                setDrawerOpen(false)
-                setShowError(true)
-                let erroStack = error.response.data
-                setErrorMessage(erroStack.message);
-                  setClearData(true)
-                setSuccessMessage("");
+            // Only include thumbnail if it's a valid base64 image (starts with data:image and is substantial)
+            // If editing and no new image uploaded, backend will keep existing thumbnail
+            if (data.thumbnail && data.thumbnail.startsWith('data:image') && data.thumbnail.length > 100) {
+                requestData.thumbnail = data.thumbnail;
+            } else if (!editData) {
+                // For new state, thumbnail is required (validated in drawer)
+                requestData.thumbnail = data.thumbnail || null;
             }
 
-        } else {
-            const formData = new FormData()
-            formData.append("name", data.name)
-            formData.append("shortDesc", data.shortDesc)
-            formData.append("longDesc", data.longDesc)
-           formData.append("continentId", continentObj.id)
-           formData.append("countryId", countryObj.id)
-           formData.append("country", countryObj.name)
-           formData.append("popularFor",data.popularFor.toString())
-            formData.append("continent", continentObj.name)
-            formData.append("thumbnail", data.thumbnailFile)
             try {
-                let resposne = await addState(formData)
-                let responseData = resposne.data
-                setSuccessMessage(responseData.message)
-                setClearData(true)
-                setDrawerOpen(false)
-                setShowSuccess(true)
-
+                let response;
+                if (editData) {
+                    response = await updateState(requestData, editData.id);
+                } else {
+                    response = await addState(requestData);
+                }
+                
+                let responseData = response.data;
+                setSuccessMessage(responseData.message);
+                setClearData(true);
+                setDrawerOpen(false);
+                setShowSuccess(true);
             } catch (error: any) {
-                let erroStack = error.response?.data
-                setShowError(true)
+                setEditData(null);
+                setDrawerOpen(false);
+                setShowError(true);
+                let erroStack = error.response?.data;
                 setErrorMessage(erroStack?.message || 'Unknown Error');
-                                  setClearData(true)
-
+                setClearData(true);
                 setSuccessMessage("");
             }
-
         }
-
-        }
-     
-
     }
 
     return (
@@ -215,13 +220,17 @@ const StatePage: React.FC = () => {
                                     <td>{index + 1}</td>
                                     <td>
                                         <img
-                                            src={`${BASE_URL}/${state.thumbnail}`}
+                                            src={formatThumbnailForDisplay(state.thumbnail)}
                                             alt={state.name}
                                             style={{
                                                 width: 60,
                                                 height: 40,
                                                 objectFit: "cover",
                                                 borderRadius: "6px",
+                                            }}
+                                            onError={(e) => {
+                                                // Fallback if base64 is invalid
+                                                (e.target as HTMLImageElement).src = '';
                                             }}
                                         />
                                     </td>

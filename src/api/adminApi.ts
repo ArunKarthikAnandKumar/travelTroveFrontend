@@ -9,11 +9,11 @@ export const fetchAllContinents=async()=>{
     return await axiosAdminInstance.get("/allContinents")
 }
 
-export const addContinent=async(formData:any)=>{
-    return await axiosAdminMultipartInstance.post("/addContinent",formData)
+export const addContinent=async(data:any)=>{
+    return await axiosAdminInstance.post("/addContinent",data)
 }
-export const updateContinent=async(formData:any,id:any)=>{
-    return await axiosAdminMultipartInstance.post(`/updateContinent/${id}`,formData)
+export const updateContinent=async(data:any,id:any)=>{
+    return await axiosAdminInstance.post(`/updateContinent/${id}`,data)
 }
 
 export const deleteContinent=async(id:any)=>{
@@ -24,11 +24,11 @@ export const fetchAllCountrys=async()=>{
     return await axiosAdminInstance.get("/allCountrys")
 }
 
-export const addCountry=async(formData:any)=>{
-    return await axiosAdminMultipartInstance.post("/addCountry",formData)
+export const addCountry=async(data:any)=>{
+    return await axiosAdminInstance.post("/addCountry",data)
 }
-export const updateCountry=async(formData:any,id:any)=>{
-    return await axiosAdminMultipartInstance.post(`/updateCountry/${id}`,formData)
+export const updateCountry=async(data:any,id:any)=>{
+    return await axiosAdminInstance.post(`/updateCountry/${id}`,data)
 }
 
 export const deleteCountry=async(id:any)=>{
@@ -40,11 +40,11 @@ export const fetchAllStates=async()=>{
     return await axiosAdminInstance.get("/allStates")
 }
 
-export const addState=async(formData:any)=>{
-    return await axiosAdminMultipartInstance.post("/addState",formData)
+export const addState=async(data:any)=>{
+    return await axiosAdminInstance.post("/addState",data)
 }
-export const updateState=async(formData:any,id:any)=>{
-    return await axiosAdminMultipartInstance.post(`/updateState/${id}`,formData)
+export const updateState=async(data:any,id:any)=>{
+    return await axiosAdminInstance.post(`/updateState/${id}`,data)
 }
 
 export const deleteState=async(id:any)=>{
@@ -56,13 +56,13 @@ export const fetchAllCities = async () => {
 };
 
 
-export const addCity = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addCity", formData);
+export const addCity = async (data: any) => {
+  return await axiosAdminInstance.post("/addCity", data);
 };
 
 
-export const updateCity = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateCity/${id}`, formData);
+export const updateCity = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateCity/${id}`, data);
 };
 
 
@@ -75,13 +75,13 @@ export const fetchAllAttractions = async () => {
 };
 
 
-export const addAttraction = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addAttraction", formData);
+export const addAttraction = async (data: any) => {
+  return await axiosAdminInstance.post("/addAttraction", data);
 };
 
 
-export const updateAttraction = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateAttraction/${id}`, formData);
+export const updateAttraction = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateAttraction/${id}`, data);
 };
 
 
@@ -95,13 +95,13 @@ export const fetchAllRestaurants = async () => {
 };
 
 
-export const addRestaurant = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addRestaurant", formData);
+export const addRestaurant = async (data: any) => {
+  return await axiosAdminInstance.post("/addRestaurant", data);
 };
 
 
-export const updateRestaurant = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateRestaurant/${id}`, formData);
+export const updateRestaurant = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateRestaurant/${id}`, data);
 };
 
 
@@ -114,13 +114,13 @@ export const fetchAllHotels = async () => {
 };
 
 
-export const addHotel = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addHotel", formData);
+export const addHotel = async (data: any) => {
+  return await axiosAdminInstance.post("/addHotel", data);
 };
 
 
-export const updateHotel = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateHotel/${id}`, formData);
+export const updateHotel = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateHotel/${id}`, data);
 };
 
 
@@ -133,13 +133,13 @@ export const fetchAllDestinationGuides = async () => {
 };
 
 
-export const addDestinationGuide = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/destinationGuides/addDestinationGuide", formData);
+export const addDestinationGuide = async (data: any) => {
+  return await axiosAdminInstance.post("/destinationGuides/addDestinationGuide", data);
 };
 
 
-export const updateDestinationGuide = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/destinationGuides/updateDestinationGuide/${id}`, formData);
+export const updateDestinationGuide = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/destinationGuides/updateDestinationGuide/${id}`, data);
 };
 
 
@@ -153,13 +153,13 @@ export const fetchAllItineraries = async () => {
 };
 
 
-export const addItinerary = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addItenary", formData);
+export const addItinerary = async (data: any) => {
+  return await axiosAdminInstance.post("/addItenary", data);
 };
 
 
-export const updateItinerary = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateItenary/${id}`, formData);
+export const updateItinerary = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateItenary/${id}`, data);
 };
 
 
@@ -173,13 +173,13 @@ export const fetchAllTravelGroups = async () => {
 };
 
 
-export const addTravelGroup = async (formData: FormData) => {
-  return await axiosAdminMultipartInstance.post("/addTravelGroup", formData);
+export const addTravelGroup = async (data: any) => {
+  return await axiosAdminInstance.post("/addTravelGroup", data);
 };
 
 
-export const updateTravelGroup = async (formData: FormData, id: string) => {
-  return await axiosAdminMultipartInstance.post(`/updateTravelGroup/${id}`, formData);
+export const updateTravelGroup = async (data: any, id: string) => {
+  return await axiosAdminInstance.post(`/updateTravelGroup/${id}`, data);
 };
 
 

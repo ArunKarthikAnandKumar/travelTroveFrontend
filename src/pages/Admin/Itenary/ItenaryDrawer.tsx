@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Continent, Country, State, City } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 type Props = {
   show: boolean;
@@ -35,7 +35,8 @@ export const ItineraryDrawer: React.FC<Props> = ({
   const [title, setTitle] = useState("");
   const [durationDays, setDurationDays] = useState<number>(1);
   const [thumbnail, setThumbnail] = useState("");
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [continent, setContinent] = useState("");
   const [country, setCountry] = useState("");
@@ -99,18 +100,43 @@ export const ItineraryDrawer: React.FC<Props> = ({
   const filteredCities = (stateId: string) =>
     cityData.filter((ele) => ele.stateId === stateId);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setThumbnailFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setThumbnail(reader.result as string);
-    reader.readAsDataURL(file);
+    
+    const validation = validateImageFile(file, 10);
+    if (!validation.isValid) {
+      alert(validation.error);
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
+    setIsCompressing(true);
+    try {
+      const compressedBase64 = await compressImage(file, 600, 600, 300);
+      const sizeInKB = getBase64SizeKB(compressedBase64);
+      if (sizeInKB > 400) {
+        alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+      }
+      setThumbnail(compressedBase64);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try again.');
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleRemoveImage = () => {
     setThumbnail("");
-    setThumbnailFile(null);
+    if(fileInputRef.current){
+      fileInputRef.current.value = "";
+    }
   };
 
   useEffect(() => {
@@ -118,7 +144,8 @@ export const ItineraryDrawer: React.FC<Props> = ({
       setType(editData.type || "Fixed");
       setTitle(editData.title || "");
       setDurationDays(editData.durationDays || 1);
-      setThumbnail(editData.thumbnail ? `${BASE_URL}/${editData.thumbnail}` : "");
+      const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+      setThumbnail(formattedThumbnail);
       setContinent(editData.continentId || "");
       setCountry(editData.countryId || "");
       setState(editData.stateId || "");
@@ -161,6 +188,7 @@ export const ItineraryDrawer: React.FC<Props> = ({
       setPriceRange("");
       setBestTimeToVisit([]);
       setTags([]);
+      setText("");
     }
   }, [editData, clearData]);
 
@@ -289,7 +317,18 @@ export const ItineraryDrawer: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate thumbnail for new entries
+    if (!editData && !thumbnail) {
+      alert("Please select a thumbnail image");
+      return;
+    }
+    
     const payloadDays = days.map((d, i) => ({ ...d, dayNumber: i + 1 }));
+    
+    // Only send thumbnail if it's a valid base64 data URL
+    const thumbnailToSend = thumbnail && thumbnail.startsWith("data:image") && thumbnail.length > 100 ? thumbnail : undefined;
+    
     onSave({
       type,
       title,
@@ -308,8 +347,7 @@ export const ItineraryDrawer: React.FC<Props> = ({
       priceRange,
       bestTimeToVisit,
       tags,
-      thumbnail,
-      thumbnailFile,
+      thumbnail: thumbnailToSend,
     });
   };
 
@@ -558,8 +596,20 @@ export const ItineraryDrawer: React.FC<Props> = ({
           <div className="card border-0 shadow-sm mb-4">
             <div className="card-header fw-semibold">Thumbnail</div>
             <div className="card-body">
-              <input type="file" className="form-control" accept="image/*" onChange={handleImageUpload} />
-              {thumbnail && (
+              <input 
+                type="file" 
+                className="form-control" 
+                accept="image/*" 
+                ref={fileInputRef}
+                onChange={handleImageUpload} 
+                disabled={isCompressing}
+              />
+              {isCompressing && (
+                <div className="mt-2 text-center text-muted">
+                  <small>Compressing image...</small>
+                </div>
+              )}
+              {thumbnail && !isCompressing && (
                 <div className="mt-3 text-center">
                   <img src={thumbnail} alt="Preview" className="rounded shadow-sm" style={{ width: "100%", maxHeight: "200px", objectFit: "cover" }} />
                   <button type="button" className="btn btn-sm btn-outline-danger mt-2" onClick={handleRemoveImage}>Remove</button>

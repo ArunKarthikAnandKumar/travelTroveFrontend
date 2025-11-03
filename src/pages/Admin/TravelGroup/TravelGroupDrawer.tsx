@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 // Define Itinerary type since the import is missing
 interface Itinerary {
@@ -35,7 +35,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 type Props = {
   show: boolean;
   onClose: () => void;
-  onSave: (data: FormData) => void;
+  onSave: (data: any) => void;
   editData: TravelGroup | null;
   itineraries: Itinerary[];
   clearData: boolean;
@@ -70,7 +70,7 @@ export const TravelGroupDrawer: React.FC<Props> = ({
   const [newInclusion, setNewInclusion] = useState('');
   const [newExclusion, setNewExclusion] = useState('');
   const [previewImage, setPreviewImage] = useState('');
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle form input changes
@@ -98,52 +98,46 @@ export const TravelGroupDrawer: React.FC<Props> = ({
     }));
   };
 
-  // Handle file upload
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log(909)
-    if (file) {
-      console.log('inside file')
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file');
-        return;
+    if (!file) return;
+    
+    const validation = validateImageFile(file, 10);
+    if (!validation.isValid) {
+      alert(validation.error);
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
       }
-      
-      // Check file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be smaller than 5MB');
-        return;
+      return;
+    }
+    
+    setIsCompressing(true);
+    try {
+      const compressedBase64 = await compressImage(file, 600, 600, 300);
+      const sizeInKB = getBase64SizeKB(compressedBase64);
+      if (sizeInKB > 400) {
+        alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
       }
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      
-      setThumbnailFile(file);
+      setPreviewImage(compressedBase64);
+      setFormData(prev => ({ ...prev, thumbnail: compressedBase64 }));
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try again.');
+      if(fileInputRef.current){
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setIsCompressing(false);
     }
   };
 
- const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  setThumbnailFile(file);
-  setFormData(prev => ({ ...prev, thumbnail: file }));
-
-  const reader = new FileReader();
-  reader.onloadend = () => setPreviewImage(reader.result as string);
-  reader.readAsDataURL(file);
-};
-
-  
-    const handleRemoveImage = () => {
-      setPreviewImage("");
-      setThumbnailFile(null);
-    };
+  const handleRemoveImage = () => {
+    setPreviewImage("");
+    setFormData(prev => ({ ...prev, thumbnail: '' }));
+    if(fileInputRef.current){
+      fileInputRef.current.value = "";
+    }
+  };
   
 
   // Handle add item (requirement, inclusion, exclusion)
@@ -185,43 +179,34 @@ export const TravelGroupDrawer: React.FC<Props> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create FormData object to handle file upload
-    const formDataObj = new FormData();
+    // Validate thumbnail for new entries
+    if (!editData && !formData.thumbnail) {
+      alert("Please select a thumbnail image");
+      return;
+    }
     
-    // Append all form fields to FormData
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'thumbnail') {
+    // Validate thumbnail size if present
+    if (formData.thumbnail && typeof formData.thumbnail === 'string') {
+      const sizeInKB = getBase64SizeKB(formData.thumbnail);
+      if (sizeInKB > 500) {
+        alert(`Image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB.`);
         return;
       }
-      if (Array.isArray(value)) {
-        // Handle arrays (requirements, inclusions, exclusions)
-        value.forEach(item => formDataObj.append(key, item));
-      } else if (value !== null && value !== undefined) {
-        formDataObj.append(key, String(value));
-      }
-    });
-
-    if (thumbnailFile) {
-      console.log(thumbnailFile)
-
-      formDataObj.append('thumbnail', thumbnailFile);
-    } else if (typeof formData.thumbnail === 'string' && formData.thumbnail) {
-      console.log(1234)
-      formDataObj.append('thumbnail', formData.thumbnail);
-    }
-
-    if (formData.itineraryId) {
-      console.log(itineraries)
-      formDataObj.set('itineraryId', formData.itineraryId);
-      formDataObj.set('itineraryId', formData.itineraryId);
-      const selectedItinerary = itineraries.find((itinerary) => itinerary._id === formData.itineraryId);
-      if (selectedItinerary) {
-        formDataObj.set('itenaryName', selectedItinerary.title);
-        formDataObj.set('itenaryName', selectedItinerary.title);
-      }
     }
     
-    onSave(formDataObj);
+    // Prepare JSON data with base64 thumbnail
+    const selectedItinerary = itineraries.find((itinerary) => itinerary._id === formData.itineraryId);
+    const requestData: any = {
+      ...formData,
+      // Only send thumbnail if it's a valid base64 data URL
+      thumbnail: formData.thumbnail && formData.thumbnail.startsWith("data:image") && formData.thumbnail.length > 100 ? formData.thumbnail : null,
+    };
+    
+    if (selectedItinerary) {
+      requestData.itenaryName = selectedItinerary.title;
+    }
+    
+    onSave(requestData);
   };
 
   // Reset form when clearData changes
@@ -244,7 +229,7 @@ export const TravelGroupDrawer: React.FC<Props> = ({
         thumbnail: ''
       });
       setPreviewImage('');
-      setThumbnailFile(null);
+      setFormData(prev => ({ ...prev, thumbnail: '' }));
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -270,19 +255,14 @@ export const TravelGroupDrawer: React.FC<Props> = ({
         exclusions: editData.exclusions || [],
         thumbnail: editData.thumbnail || ''
       });
-      setThumbnailFile(null);
-
       if (editData.thumbnail && typeof editData.thumbnail === 'string') {
-        setPreviewImage(`${BASE_URL}/${editData.thumbnail}`);
-      } else if (editData.thumbnail instanceof File) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewImage(reader.result as string);
-        };
-        reader.readAsDataURL(editData.thumbnail);
+        const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail);
+        setPreviewImage(formattedThumbnail);
+        setFormData(prev => ({ ...prev, thumbnail: editData.thumbnail as string }));
+      } else {
+        setPreviewImage('');
+        setFormData(prev => ({ ...prev, thumbnail: '' }));
       }
-    } else {
-      setThumbnailFile(null);
     }
   }, [editData]);
 
@@ -326,9 +306,15 @@ export const TravelGroupDrawer: React.FC<Props> = ({
                       type="button" 
                       className="btn btn-outline-secondary"
                       onClick={() => fileInputRef.current?.click()}
+                      disabled={isCompressing}
                     >
-                      Choose File
+                      {isCompressing ? 'Compressing...' : 'Choose File'}
                     </button>
+                    {isCompressing && (
+                      <div className="mt-2 text-muted">
+                        <small>Compressing image...</small>
+                      </div>
+                    )}
                     <div className="form-text">Recommended size: 800x400px, max 5MB</div>
                   </div>
                 </div>

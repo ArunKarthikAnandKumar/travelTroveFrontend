@@ -10,6 +10,7 @@ import {
 } from "../../../api/adminApi";
 import AlertMessage from "../../../components/Common/AlertMessage";
 import { BASE_URL } from "../../../utils/constatnts";
+import { formatThumbnailForDisplay } from "../../../utils/imageUtils";
 
 const ItineraryPage: React.FC = () => {
   const [itineraries, setItineraries] = useState<any[]>([]);
@@ -74,36 +75,34 @@ const ItineraryPage: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      const formData = new FormData();
+      const requestData: any = {
+        type: data.type,
+        title: data.title,
+        durationDays: data.durationDays,
+        continentId: data.continentId || data.continent || "",
+        countryId: data.countryId || data.country || "",
+        stateId: data.stateId || data.state || "",
+        cityId: data.cityId || data.city || "",
+        continent: data.continent || getNameById(continents, data.continentId || data.continent),
+        country: data.country || getNameById(countries, data.countryId || data.country),
+        state: data.state || getNameById(states, data.stateId || data.state),
+        city: data.city || getNameById(cities, data.cityId || data.city),
+        days: JSON.stringify(data.days || []),
+        inclusions: JSON.stringify(data.inclusions || []),
+        exclusions: JSON.stringify(data.exclusions || []),
+        priceRange: data.priceRange || "",
+        bestTimeToVisit: JSON.stringify(data.bestTimeToVisit || []),
+        tags: JSON.stringify(data.tags || []),
+      };
 
-      formData.append("type", data.type);
-      formData.append("title", data.title);
-      formData.append("durationDays", data.durationDays);
-
-      formData.append("continentId", data.continentId || data.continent || "");
-      formData.append("countryId", data.countryId || data.country || "");
-      formData.append("stateId", data.stateId || data.state || "");
-      formData.append("cityId", data.cityId || data.city || "");
-
-      formData.append("continent", data.continent || getNameById(continents, data.continentId || data.continent));
-      formData.append("country", data.country || getNameById(countries, data.countryId || data.country));
-      formData.append("state", data.state || getNameById(states, data.stateId || data.state));
-      formData.append("city", data.city || getNameById(cities, data.cityId || data.city));
-
-      formData.append("days", JSON.stringify(data.days || []));
-      formData.append("inclusions", JSON.stringify(data.inclusions || []));
-      formData.append("exclusions", JSON.stringify(data.exclusions || []));
-      formData.append("priceRange", data.priceRange || "");
-      formData.append("bestTimeToVisit", JSON.stringify(data.bestTimeToVisit || []));
-      formData.append("tags", JSON.stringify(data.tags || []));
-
-      if (data.thumbnailFile) {
-        formData.append("thumbnail", data.thumbnailFile);
+      // Only include thumbnail if it's a new base64 image or required for new entry
+      if (data.thumbnail && data.thumbnail.startsWith("data:image") && data.thumbnail.length > 100) {
+        requestData.thumbnail = data.thumbnail;
       }
 
       const response = editData
-        ? await updateItinerary(formData, editData.id)
-        : await addItinerary(formData);
+        ? await updateItinerary(requestData, editData.id)
+        : await addItinerary(requestData);
 
       setAlert({ type: "success", message: response.data.message });
       setDrawerOpen(false);
@@ -160,13 +159,17 @@ const ItineraryPage: React.FC = () => {
                 <td>{(currentPage - 1) * pageSize + index + 1}</td>
                 <td>
                   <img
-                    src={`${BASE_URL}/${itinerary.thumbnail}`}
+                    src={formatThumbnailForDisplay(itinerary.thumbnail, BASE_URL)}
                     alt={itinerary.title}
                     style={{
                       width: 60,
                       height: 40,
                       objectFit: "cover",
                       borderRadius: "6px",
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "";
+                      (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 </td>

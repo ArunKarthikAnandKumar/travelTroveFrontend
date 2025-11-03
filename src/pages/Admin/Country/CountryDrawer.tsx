@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { Continent, Country } from "../../../models/Destinations";
-import { BASE_URL } from "../../../utils/constatnts";
+import { compressImage, formatThumbnailForDisplay, validateImageFile, getBase64SizeKB } from "../../../utils/imageUtils";
 
 
 type Props = {
@@ -25,7 +25,7 @@ export const CountryDrawer: React.FC<Props> = ({
     const [shortDesc, setShortDesc] = useState("");
     const [longDesc, setLongDesc] = useState("");
     const [thumbnail, setThumbnail] = useState<string>("");
-    const [thumbnailFile,setThumbnailFile]=useState<File|null>(null)
+    const [isCompressing, setIsCompressing] = useState(false);
     const fileInputRef=useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -34,9 +34,18 @@ export const CountryDrawer: React.FC<Props> = ({
             setName(editData.name);
             setShortDesc(editData.shortDesc);
             setLongDesc(editData.longDesc);
-            setThumbnail(`${BASE_URL}/${editData.thumbnail}`);
+            // Format thumbnail for display - extract base64 if backend added path prefix
+            const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail || "");
+            setThumbnail(formattedThumbnail);
            
-        }
+        }else if(clearData){
+                setName("");
+            setShortDesc("");
+            setLongDesc("");
+            setThumbnail("");
+            setContinent("")
+
+        } 
         else {
             setName("");
             setShortDesc("");
@@ -46,18 +55,40 @@ export const CountryDrawer: React.FC<Props> = ({
         }
     }, [editData,clearData]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setThumbnailFile(file)
-        const reader = new FileReader();
-        reader.onloadend = () => setThumbnail(reader.result as string);
-        reader.readAsDataURL(file);
+        
+        // Validate file
+        const validation = validateImageFile(file, 10);
+        if (!validation.isValid) {
+            alert(validation.error);
+            if(fileInputRef.current){
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+        
+        setIsCompressing(true);
+        try {
+            const compressedBase64 = await compressImage(file, 600, 600, 300);
+            const sizeInKB = getBase64SizeKB(compressedBase64);
+            if (sizeInKB > 400) {
+                alert(`Warning: Image compressed to ${sizeInKB.toFixed(0)}KB. For best results, try a smaller image.`);
+            }
+            setThumbnail(compressedBase64);
+        } catch (error) {
+            console.error('Error compressing image:', error);
+            alert('Error processing image. Please try again.');
+            if(fileInputRef.current){
+                fileInputRef.current.value = "";
+            }
+        } finally {
+            setIsCompressing(false);
+        }
     };
     const handleRemoveImage = () => {
-        
         setThumbnail("");
-        setThumbnailFile(null);
         if(fileInputRef.current){
             fileInputRef.current.value=""
         }
@@ -65,15 +96,34 @@ export const CountryDrawer: React.FC<Props> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !shortDesc.trim() || !longDesc.trim()) return;
-        onSave({
+        
+        // Prepare data object
+        const submitData: any = {
             id: editData ? editData.id : `Date.now()`,
             name,
             continent,
             shortDesc,
-            longDesc,
-            thumbnail,
-            thumbnailFile,
-        });
+            longDesc
+        };
+        
+        // Only send thumbnail if it's a valid base64 data URL (newly uploaded image)
+        // Check if thumbnail starts with data:image and has substantial content
+        if (thumbnail && thumbnail.startsWith('data:image') && thumbnail.length > 100) {
+            // Final size check before submitting
+            const sizeInKB = getBase64SizeKB(thumbnail);
+            if (sizeInKB > 500) {
+                alert(`Image is too large (${sizeInKB.toFixed(0)}KB). Maximum allowed is 500KB. Please select a smaller image.`);
+                return;
+            }
+            submitData.thumbnail = thumbnail;
+        } else if (!editData) {
+            // Require file when adding new country
+            alert("Please select a thumbnail image");
+            return;
+        }
+        // If editing and no new image, don't include thumbnail (backend will keep existing)
+        
+        onSave(submitData);
     };
     return (
       <div
@@ -153,8 +203,14 @@ export const CountryDrawer: React.FC<Props> = ({
             accept="image/*"
             className="form-control"
             onChange={handleImageUpload}
+            disabled={isCompressing}
           />
-          {thumbnail && (
+          {isCompressing && (
+            <div className="mt-2 text-center text-muted">
+              <small>Compressing image...</small>
+            </div>
+          )}
+          {thumbnail && !isCompressing && (
             <div className="mt-3 text-center">
               <img
                 src={thumbnail}
