@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyFavorites, removeDestinationFromFavorites, removeItineraryFromFavorites } from '../../api/userServices';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 import DestinationCard from '../../components/DestinationCard';
 
 const MyFavorites: React.FC = () => {
@@ -140,9 +141,12 @@ const MyFavorites: React.FC = () => {
                   <div className="position-relative">
                     <img
                       className="card-img-top"
-                      src={itinerary.thumbnail ? `${BASE_URL}/${itinerary.thumbnail}` : 'https://via.placeholder.com/300x200?text=No+Image'}
+                      src={formatThumbnailForDisplay(itinerary.thumbnail, BASE_URL)}
                       alt={itinerary.title}
                       style={{ height: '200px', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                     <div className="position-absolute top-0 end-0 m-2">
                       <button

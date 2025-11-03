@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 import './DestinationCard.css';
 
 interface DestinationCardProps {
@@ -90,10 +91,13 @@ const DestinationCard: React.FC<DestinationCardProps> = ({ destination }) => {
       <Link to={`/destinations/${id}`} className="text-decoration-none text-dark">
         <div className="position-relative">
           <img 
-            src={thumbnail ? `${BASE_URL}/${thumbnail}` : 'https://via.placeholder.com/300x200?text=No+Image'} 
+            src={formatThumbnailForDisplay(thumbnail, BASE_URL)} 
             alt={title || 'Destination image'}
             className="card-img-top"
             style={{ height: '200px', objectFit: 'cover' }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+            }}
           />
           {highlights && highlights.length > 0 && highlights[0] && (
             <div className="position-absolute top-0 end-0 m-2">

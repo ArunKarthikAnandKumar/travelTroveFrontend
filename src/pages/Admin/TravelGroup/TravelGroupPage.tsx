@@ -5,7 +5,9 @@ import {
   updateTravelGroup,
   deleteTravelGroup,
   fetchAllTravelGroups,
-  fetchAllItineraries
+  fetchAllItineraries,
+  fetchAllUsers,
+  inviteUserToTravelGroup
 } from "../../../api/adminApi";
 import { BASE_URL } from "../../../utils/constatnts";
 import { formatThumbnailForDisplay } from "../../../utils/imageUtils";
@@ -36,6 +38,14 @@ interface TravelGroup {
   requirements: string[];
   inclusions: string[];
   exclusions: string[];
+  isPrivate?: boolean;
+  invitedUsers?: any[];
+}
+
+interface User {
+  _id: string;
+  userName: string;
+  email: string;
 }
 
 type ColumnDefinition = {
@@ -56,6 +66,10 @@ const TravelGroupPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [itineraryFilter, setItineraryFilter] = useState<string | null>(null);
   const [clearForm, setClearForm] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<TravelGroup | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userSearchText, setUserSearchText] = useState("");
 
   const handleClearFilters = () => {
     setSearchText("");
@@ -65,7 +79,10 @@ const TravelGroupPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (inviteModalOpen) {
+      fetchUsers();
+    }
+  }, [inviteModalOpen]);
 
   const fetchData = async () => {
     try {
@@ -115,6 +132,39 @@ const TravelGroupPage: React.FC = () => {
       } catch (error) {
         setAlert({ type: "error", message: "Failed to delete travel group" });
       }
+    }
+  };
+
+  const handleOpenInviteModal = (group: TravelGroup) => {
+    setSelectedGroup(group);
+    setInviteModalOpen(true);
+    fetchUsers();
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetchAllUsers();
+      setUsers(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setAlert({ type: "error", message: "Failed to fetch users" });
+    }
+  };
+
+  const handleInviteUser = async (userId: string) => {
+    if (!selectedGroup) return;
+    try {
+      await inviteUserToTravelGroup(selectedGroup._id, userId);
+      setAlert({ type: "success", message: "User invited successfully" });
+      // Refresh data to get updated invited users
+      const updatedGroupsRes = await fetchAllTravelGroups();
+      const updatedGroup = updatedGroupsRes.data.data.find((g: any) => g._id === selectedGroup._id);
+      if (updatedGroup) {
+        setSelectedGroup({ ...selectedGroup, ...updatedGroup });
+      }
+      fetchData();
+    } catch (error: any) {
+      setAlert({ type: "error", message: error.response?.data?.message || "Failed to invite user" });
     }
   };
 
@@ -197,11 +247,25 @@ const TravelGroupPage: React.FC = () => {
       }
     },
     {
+      title: 'Privacy', key: 'privacy',
+      render: (_: any, record: TravelGroup) => {
+        const isPrivate = record.isPrivate;
+        return (
+          <span className={`badge ${isPrivate ? 'bg-danger' : 'bg-success'}`}>
+            {isPrivate ? 'Private' : 'Public'}
+          </span>
+        );
+      }
+    },
+    {
       title: 'Actions', key: 'actions',
       render: (_: any, record: TravelGroup) => (
         <div className="btn-group">
           <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit(record)}>
             <i className="bi bi-pencil"></i>
+          </button>
+          <button className="btn btn-sm btn-outline-success ms-2" onClick={() => handleOpenInviteModal(record)} title="Invite Users">
+            <i className="bi bi-person-plus"></i>
           </button>
           <button className="btn btn-sm btn-outline-danger ms-2" onClick={() => handleDelete(record._id)}>
             <i className="bi bi-trash"></i>
@@ -327,6 +391,88 @@ const TravelGroupPage: React.FC = () => {
         itineraries={itineraries}
         clearData={clearForm}
       />
+
+      {/* Invite Users Modal */}
+      {inviteModalOpen && selectedGroup && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setInviteModalOpen(false)}>
+          <div className="modal-dialog modal-lg modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Invite Users to {selectedGroup.name}</h5>
+                <button type="button" className="btn-close" onClick={() => setInviteModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search users by name or email..."
+                    value={userSearchText}
+                    onChange={(e) => setUserSearchText(e.target.value)}
+                  />
+                </div>
+                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  <table className="table table-hover">
+                    <thead className="table-light sticky-top">
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users
+                        .filter(user =>
+                          user.userName.toLowerCase().includes(userSearchText.toLowerCase()) ||
+                          user.email.toLowerCase().includes(userSearchText.toLowerCase())
+                        )
+                        .map(user => {
+                          const isInvited = selectedGroup.invitedUsers?.some(
+                            (invite: any) => {
+                              const inviteUserId = typeof invite.userId === 'object' ? invite.userId?._id || invite.userId?.toString() : invite.userId?.toString();
+                              return inviteUserId === user._id || inviteUserId === user._id.toString();
+                            }
+                          );
+                          const isMember = selectedGroup.members?.some(
+                            (member: any) => {
+                              const memberUserId = typeof member.user === 'object' ? member.user?._id || member.user?.toString() : member.user?.toString();
+                              return memberUserId === user._id || memberUserId === user._id.toString();
+                            }
+                          );
+                          return (
+                            <tr key={user._id}>
+                              <td>{user.userName}</td>
+                              <td>{user.email}</td>
+                              <td>
+                                {isMember ? (
+                                  <span className="badge bg-success">Member</span>
+                                ) : isInvited ? (
+                                  <span className="badge bg-info">Invited</span>
+                                ) : (
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() => handleInviteUser(user._id)}
+                                  >
+                                    Invite
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setInviteModalOpen(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

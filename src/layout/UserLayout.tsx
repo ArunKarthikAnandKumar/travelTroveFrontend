@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom"
-import UserNavbar from "../components/NavBar/UserNavbar"
+import VisitorNavbar from "../components/NavBar/VisitorNavbar"
 import Footer from "../components/Footer/Footer"
 import "../components/NavBar/Navbar.css"
 
@@ -16,7 +16,7 @@ const UserLayout:React.FC=()=>{
     return (
         <>
         <div className="d-flex flex-column min-vh-100">
-            <UserNavbar/>
+            <VisitorNavbar/>
             <main className="content-with-navbar flex-grow-1">
                 <Outlet/>
             </main>

@@ -6,6 +6,7 @@ import "./Navbar.css";
 const VisitorNavbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,6 +17,21 @@ const VisitorNavbar: React.FC = () => {
       setIsLoggedIn(!!token);
     };
     checkAuth();
+    
+    // Listen for storage changes (login/logout in other tabs)
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check on focus (in case login happened in same tab)
+    window.addEventListener('focus', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', checkAuth);
+    };
   }, []);
   
   const handleSearch = (e: FormEvent) => {
@@ -36,8 +52,28 @@ const VisitorNavbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isDropdownOpen && !target.closest('.dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const closeDropdown = () => setIsDropdownOpen(false);
 
   const handleLogout = () => {
     clearSession();
@@ -76,12 +112,12 @@ const VisitorNavbar: React.FC = () => {
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/user/travel-groups" onClick={closeMenu}>
+              <Link className="nav-link" to="/travel-groups" onClick={closeMenu}>
                 <i className="bi bi-people d-lg-none me-1"></i> Travel Groups
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/user/my-itineraries" onClick={closeMenu}>
+              <Link className="nav-link" to="/itineraries" onClick={closeMenu}>
                 <i className="bi bi-map d-lg-none me-1"></i> Itineraries
               </Link>
             </li>
@@ -99,7 +135,7 @@ const VisitorNavbar: React.FC = () => {
                   aria-label="Search"
                   defaultValue={searchParams.get('search') || ''}
                 />
-                <button className="btn btn-outline-light" type="submit">
+                <button className="btn btn-primary" type="submit" style={{ backgroundColor: '#3498db', borderColor: '#3498db', color: '#fff' }}>
                   <i className="bi bi-search"></i>
                 </button>
               </form>
@@ -108,39 +144,39 @@ const VisitorNavbar: React.FC = () => {
             {isLoggedIn ? (
               <div className="dropdown">
                 <button
-                  className="btn btn-outline-primary dropdown-toggle d-flex align-items-center"
+                  className={`btn btn-outline-primary dropdown-toggle d-flex align-items-center ${isDropdownOpen ? 'show' : ''}`}
                   type="button"
                   id="userDropdown"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  onClick={toggleDropdown}
+                  aria-expanded={isDropdownOpen}
                 >
                   <i className="bi bi-person-circle me-1"></i>
                   <span className="d-none d-lg-inline">My Account</span>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <ul className={`dropdown-menu dropdown-menu-end ${isDropdownOpen ? 'show' : ''}`} aria-labelledby="userDropdown">
                   <li>
-                    <Link className="dropdown-item" to="/user/profile" onClick={closeMenu}>
+                    <Link className="dropdown-item" to="/user/profile" onClick={() => { closeMenu(); closeDropdown(); }}>
                       <i className="bi bi-person me-2"></i> My Profile
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/user/my-favorites" onClick={closeMenu}>
+                    <Link className="dropdown-item" to="/user/my-favorites" onClick={() => { closeMenu(); closeDropdown(); }}>
                       <i className="bi bi-heart me-2"></i> My Favorites
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/user/my-itineraries" onClick={closeMenu}>
+                    <Link className="dropdown-item" to="/user/my-itineraries" onClick={() => { closeMenu(); closeDropdown(); }}>
                       <i className="bi bi-calendar me-2"></i> My Itineraries
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/user/travel-groups" onClick={closeMenu}>
+                    <Link className="dropdown-item" to="/user/travel-groups" onClick={() => { closeMenu(); closeDropdown(); }}>
                       <i className="bi bi-people me-2"></i> Travel Groups
                     </Link>
                   </li>
                   <li><hr className="dropdown-divider" /></li>
                   <li>
-                    <button className="dropdown-item text-danger" onClick={handleLogout}>
+                    <button className="dropdown-item text-danger" onClick={() => { closeDropdown(); handleLogout(); }}>
                       <i className="bi bi-box-arrow-right me-2"></i> Logout
                     </button>
                   </li>

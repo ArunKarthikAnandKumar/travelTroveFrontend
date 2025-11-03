@@ -8,6 +8,7 @@ import {
 } from '../../api/userServices';
 import { getToken } from '../../utils/token';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 
 const ItineraryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +35,12 @@ const ItineraryDetail: React.FC = () => {
       if (response.error) {
         setError(response.message);
       } else {
-        setItinerary(response.data);
+        // Normalize id/_id - use id if available, otherwise _id
+        const data = response.data;
+        if (data && !data.id && data._id) {
+          data.id = data._id;
+        }
+        setItinerary(data);
       }
     } catch (error: any) {
       setError(error.message || 'Failed to fetch itinerary details');
@@ -51,11 +57,12 @@ const ItineraryDetail: React.FC = () => {
     }
 
     try {
+      const itineraryId = itinerary?.id || itinerary?._id || id;
       if (isFavorite) {
-        await removeItineraryFromFavorites(id!);
+        await removeItineraryFromFavorites(itineraryId);
         setIsFavorite(false);
       } else {
-        await addItineraryToFavorites(id!);
+        await addItineraryToFavorites(itineraryId);
         setIsFavorite(true);
       }
     } catch (error) {
@@ -77,7 +84,8 @@ const ItineraryDetail: React.FC = () => {
 
     try {
       setSubmittingReview(true);
-      await addItineraryReview(id!, { rating: reviewRating, comment: reviewComment });
+      const itineraryId = itinerary?.id || itinerary?._id || id;
+      await addItineraryReview(itineraryId, { rating: reviewRating, comment: reviewComment });
       alert('Review added successfully!');
       setReviewRating(0);
       setReviewComment('');
@@ -133,262 +141,481 @@ const ItineraryDetail: React.FC = () => {
   }
 
   return (
-    <div className="container my-5 detail-page">
-      <div className="mb-4">
-        <button className="btn btn-outline-secondary mb-3" onClick={() => navigate('/user/my-itineraries')}>
-          <i className="bi bi-arrow-left me-2"></i>Back to Itineraries
-        </button>
-      </div>
-
-      {/* Header Section */}
-      <div className="row mb-4">
-        <div className="col-md-8">
-          <h1 className="mb-3" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{itinerary.title}</h1>
-          <div className="d-flex align-items-center mb-3">
-            <i className="bi bi-geo-alt-fill me-2 text-primary"></i>
-            <span className="me-4">
-              {itinerary.city}, {itinerary.state}, {itinerary.country}
-            </span>
-            <span className="badge bg-primary me-2">{itinerary.type}</span>
-            {itinerary.priceRange && (
-              <span className="badge bg-success">{itinerary.priceRange}</span>
-            )}
-          </div>
-          {itinerary.avgRating > 0 && (
-            <div className="mb-3">
-              {renderStars(itinerary.avgRating)}
-              <span className="text-muted ms-2">
-                ({itinerary.reviews?.length || 0} reviews)
-              </span>
-            </div>
-          )}
-          <div className="mb-3">
-            <i className="bi bi-calendar me-2"></i>
-            <strong>Duration:</strong> {itinerary.durationDays} Days
-          </div>
-        </div>
-        <div className="col-md-4 text-end">
+    <div className="destination-detail-page detail-page">
+      <div className="container py-4">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <button className="btn btn-outline-primary" onClick={() => navigate('/itineraries')}>
+            <i className="bi bi-arrow-left"></i> Back
+          </button>
           {isAuthenticated && (
             <button
-              className="btn btn-outline-danger mb-2"
+              className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
               onClick={handleToggleFavorite}
             >
-              <i className={`bi ${isFavorite ? 'bi-heart-fill' : 'bi-heart'} me-2`}></i>
-              {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+              <i className={`bi ${isFavorite ? 'bi-heart-fill' : 'bi-heart'}`}></i>{' '}
+              {isFavorite ? 'Favorited' : 'Add to Favorites'}
             </button>
           )}
         </div>
-      </div>
 
-      {/* Thumbnail */}
-      {itinerary.thumbnail && (
-        <div className="mb-4">
-          <img
-            src={`${BASE_URL}/${itinerary.thumbnail}`}
-            alt={itinerary.title}
-            className="img-fluid rounded"
-            style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }}
-          />
-        </div>
-      )}
-
-      {/* Overview */}
-      {itinerary.overview && (
-        <div className="mb-4">
-          <h3>Overview</h3>
-          <p className="lead">{itinerary.overview}</p>
-        </div>
-      )}
-
-      {/* Days Itinerary */}
-      {itinerary.days && itinerary.days.length > 0 && (
-        <div className="mb-4">
-          <h3>Itinerary Details</h3>
-          {itinerary.days.map((day: any, index: number) => (
-            <div key={index} className="card mb-3">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">Day {index + 1}</h5>
+        <div className="row gx-4">
+          {/* Main Column */}
+          <div className="col-lg-8">
+            {/* Hero Section */}
+            <div className="main-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+              {/* Hero Image with placeholder background */}
+              <div
+                className="rounded mb-4"
+                style={{
+                  height: '400px',
+                  width: '100%',
+                  position: 'relative',
+                  background: itinerary.thumbnail ? 'transparent' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  overflow: 'hidden',
+                }}
+              >
+                {itinerary.thumbnail ? (
+                  <img
+                    src={formatThumbnailForDisplay(itinerary.thumbnail, BASE_URL)}
+                    alt={itinerary.title}
+                    className="img-fluid"
+                    style={{ height: '100%', objectFit: 'cover', width: '100%' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        parent.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                      }
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="d-flex align-items-center justify-content-center text-white"
+                    style={{ height: '100%' }}
+                  >
+                    <div className="text-center">
+                      <i className="bi bi-image" style={{ fontSize: '4rem', opacity: 0.5 }}></i>
+                      <p className="mt-3 mb-0" style={{ opacity: 0.7 }}>No Image Available</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="card-body">
-                {day.title && <h6 className="card-title">{day.title}</h6>}
-                {day.description && <p className="card-text">{day.description}</p>}
-                
-                {day.attractions && day.attractions.length > 0 && (
-                  <div className="mb-3">
-                    <strong>Attractions:</strong>
-                    <ul className="list-unstyled ms-3">
-                      {day.attractions.map((attr: any, i: number) => (
-                        <li key={i}>
-                          <i className="bi bi-geo-alt me-2"></i>
-                          {attr.attractionName || attr.name}
+
+              <h1 className="fw-bold mb-3" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{itinerary.title}</h1>
+              
+              <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <p className="text-muted mb-0">
+                  <i className="bi bi-geo-alt-fill me-2"></i>
+                  {[itinerary.city, itinerary.state, itinerary.country, itinerary.continent]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                <span className="badge bg-primary">{itinerary.type}</span>
+                {itinerary.priceRange && (
+                  <span className="badge bg-success">{itinerary.priceRange}</span>
+                )}
+              </div>
+
+              <div className="d-flex flex-wrap align-items-center gap-4 mb-3">
+                {itinerary.avgRating > 0 && (
+                  <div className="d-flex align-items-center">
+                    {renderStars(itinerary.avgRating)}
+                    <span className="text-muted ms-2">
+                      ({itinerary.reviews?.length || 0} reviews)
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <i className="bi bi-calendar me-2 text-primary"></i>
+                  <strong>Duration:</strong> {itinerary.durationDays} Days
+                </div>
+              </div>
+            </div>
+
+            {/* Overview */}
+            {itinerary.overview && (
+              <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+                <h4 className="fw-semibold mb-3">Overview</h4>
+                <p className="text-muted">{itinerary.overview}</p>
+              </div>
+            )}
+
+            {/* Days Itinerary */}
+            {itinerary.days && itinerary.days.length > 0 && (
+              <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+                <h4 className="fw-semibold mb-4">Daily Itinerary</h4>
+                {itinerary.days.map((day: any, index: number) => (
+                  <div key={index} className="card border-0 shadow-sm mb-3">
+                    <div className="card-header bg-primary text-white">
+                      <h5 className="mb-0 fw-bold">
+                        <i className="bi bi-calendar-day me-2"></i>
+                        Day {index + 1}
+                        {day.title && ` - ${day.title}`}
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      {day.description && (
+                        <div className="mb-3">
+                          <p className="text-muted mb-0">{day.description}</p>
+                        </div>
+                      )}
+                      
+                      {day.attractions && day.attractions.length > 0 && (
+                        <div className="mb-3">
+                          <h6 className="fw-bold mb-2">
+                            <i className="bi bi-geo-alt-fill text-primary me-2"></i>
+                            Attractions
+                          </h6>
+                          <div className="list-group">
+                            {day.attractions.map((attr: any, i: number) => (
+                              <div key={i} className="list-group-item border-0 bg-light">
+                                <div className="d-flex justify-content-between align-items-start">
+                                  <div className="flex-grow-1">
+                                    <i className="bi bi-map text-primary me-2"></i>
+                                    <strong>{attr.attractionName || attr.name}</strong>
+                                    {attr.notes && (
+                                      <p className="text-muted small mb-0 mt-1">{attr.notes}</p>
+                                    )}
+                                  </div>
+                                  {(attr.startTime || attr.endTime) && (
+                                    <div className="text-end">
+                                      {attr.startTime && (
+                                        <small className="text-muted d-block">
+                                          <i className="bi bi-clock me-1"></i>
+                                          {attr.startTime}
+                                        </small>
+                                      )}
+                                      {attr.endTime && (
+                                        <small className="text-muted d-block">
+                                          <i className="bi bi-clock-fill me-1"></i>
+                                          {attr.endTime}
+                                        </small>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {day.meals && (day.meals.breakfast || day.meals.lunch || day.meals.dinner) && (
+                        <div className="mb-3">
+                          <h6 className="fw-bold mb-2">
+                            <i className="bi bi-fork-knife text-warning me-2"></i>
+                            Meals
+                          </h6>
+                          <div className="list-group">
+                            {day.meals.breakfast && (
+                              <div className="list-group-item border-0 bg-light">
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <i className="bi bi-sun text-warning me-2"></i>
+                                    <strong>Breakfast:</strong> {day.meals.breakfast.restaurantName}
+                                  </div>
+                                  {day.meals.breakfast.time && (
+                                    <small className="text-muted">
+                                      <i className="bi bi-clock me-1"></i>
+                                      {day.meals.breakfast.time}
+                                    </small>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {day.meals.lunch && (
+                              <div className="list-group-item border-0 bg-light">
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <i className="bi bi-sun-fill text-warning me-2"></i>
+                                    <strong>Lunch:</strong> {day.meals.lunch.restaurantName}
+                                  </div>
+                                  {day.meals.lunch.time && (
+                                    <small className="text-muted">
+                                      <i className="bi bi-clock me-1"></i>
+                                      {day.meals.lunch.time}
+                                    </small>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {day.meals.dinner && (
+                              <div className="list-group-item border-0 bg-light">
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <i className="bi bi-moon text-info me-2"></i>
+                                    <strong>Dinner:</strong> {day.meals.dinner.restaurantName}
+                                  </div>
+                                  {day.meals.dinner.time && (
+                                    <small className="text-muted">
+                                      <i className="bi bi-clock me-1"></i>
+                                      {day.meals.dinner.time}
+                                    </small>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {day.hotelStay && (
+                        <div>
+                          <h6 className="fw-bold mb-2">
+                            <i className="bi bi-house-door text-success me-2"></i>
+                            Hotel Stay
+                          </h6>
+                          <div className="list-group-item border-0 bg-light">
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div>
+                                <i className="bi bi-building text-success me-2"></i>
+                                <strong>{day.hotelStay.hotelName}</strong>
+                              </div>
+                              {(day.hotelStay.checkIn || day.hotelStay.checkOut) && (
+                                <div className="text-end">
+                                  {day.hotelStay.checkIn && (
+                                    <small className="text-muted d-block">
+                                      <i className="bi bi-door-open me-1"></i>
+                                      Check-in: {day.hotelStay.checkIn}
+                                    </small>
+                                  )}
+                                  {day.hotelStay.checkOut && (
+                                    <small className="text-muted d-block">
+                                      <i className="bi bi-door-closed me-1"></i>
+                                      Check-out: {day.hotelStay.checkOut}
+                                    </small>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Inclusions & Exclusions */}
+            <div className="row mb-4">
+              {itinerary.inclusions && itinerary.inclusions.length > 0 && (
+                <div className="col-md-6 mb-4">
+                  <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 h-100">
+                    <h4 className="fw-semibold mb-3 text-success">
+                      <i className="bi bi-check-circle me-2"></i>
+                      Inclusions
+                    </h4>
+                    <ul className="list-unstyled">
+                      {itinerary.inclusions.map((inc: string, i: number) => (
+                        <li key={i} className="mb-2">
+                          <i className="bi bi-check text-success me-2"></i>
+                          {inc}
                         </li>
                       ))}
                     </ul>
                   </div>
-                )}
-
-                {day.meals && (
-                  <div className="mb-3">
-                    <strong>Meals:</strong>
-                    <ul className="list-unstyled ms-3">
-                      {day.meals.breakfast && (
-                        <li><i className="bi bi-sun me-2"></i>Breakfast: {day.meals.breakfast.restaurantName}</li>
-                      )}
-                      {day.meals.lunch && (
-                        <li><i className="bi bi-sun-fill me-2"></i>Lunch: {day.meals.lunch.restaurantName}</li>
-                      )}
-                      {day.meals.dinner && (
-                        <li><i className="bi bi-moon me-2"></i>Dinner: {day.meals.dinner.restaurantName}</li>
-                      )}
+                </div>
+              )}
+              {itinerary.exclusions && itinerary.exclusions.length > 0 && (
+                <div className="col-md-6 mb-4">
+                  <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 h-100">
+                    <h4 className="fw-semibold mb-3 text-danger">
+                      <i className="bi bi-x-circle me-2"></i>
+                      Exclusions
+                    </h4>
+                    <ul className="list-unstyled">
+                      {itinerary.exclusions.map((exc: string, i: number) => (
+                        <li key={i} className="mb-2">
+                          <i className="bi bi-x text-danger me-2"></i>
+                          {exc}
+                        </li>
+                      ))}
                     </ul>
                   </div>
-                )}
-
-                {day.hotelStay && (
-                  <div>
-                    <strong>Hotel:</strong>
-                    <span className="ms-2">
-                      <i className="bi bi-house-door me-2"></i>
-                      {day.hotelStay.hotelName}
-                    </span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Inclusions & Exclusions */}
-      <div className="row mb-4">
-        {itinerary.inclusions && itinerary.inclusions.length > 0 && (
-          <div className="col-md-6">
-            <h4>Inclusions</h4>
-            <ul>
-              {itinerary.inclusions.map((inc: string, i: number) => (
-                <li key={i}>{inc}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {itinerary.exclusions && itinerary.exclusions.length > 0 && (
-          <div className="col-md-6">
-            <h4>Exclusions</h4>
-            <ul>
-              {itinerary.exclusions.map((exc: string, i: number) => (
-                <li key={i}>{exc}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Best Time to Visit */}
-      {itinerary.bestTimeToVisit && itinerary.bestTimeToVisit.length > 0 && (
-        <div className="mb-4">
-          <h4>Best Time to Visit</h4>
-          <div className="d-flex flex-wrap gap-2">
-            {itinerary.bestTimeToVisit.map((time: string, i: number) => (
-              <span key={i} className="badge bg-info">{time}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tags */}
-      {itinerary.tags && itinerary.tags.length > 0 && (
-        <div className="mb-4">
-          <h4>Tags</h4>
-          <div className="d-flex flex-wrap gap-2">
-            {itinerary.tags.map((tag: string, i: number) => (
-              <span key={i} className="badge bg-secondary">{tag}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Reviews Section */}
-      <div className="mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h3>Reviews</h3>
-          {isAuthenticated && (
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowReviewForm(!showReviewForm)}
-            >
-              {showReviewForm ? 'Cancel' : 'Add Review'}
-            </button>
-          )}
-        </div>
-
-        {showReviewForm && isAuthenticated && (
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5>Write a Review</h5>
-              <div className="mb-3">
-                <label className="form-label">Rating</label>
-                <div>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      className="btn btn-link p-0 me-1"
-                      onClick={() => setReviewRating(star)}
-                    >
-                      <i
-                        className={`bi ${
-                          star <= reviewRating ? 'bi-star-fill' : 'bi-star'
-                        } text-warning`}
-                        style={{ fontSize: '1.5rem' }}
-                      />
-                    </button>
+            {/* Best Time to Visit */}
+            {itinerary.bestTimeToVisit && itinerary.bestTimeToVisit.length > 0 && (
+              <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+                <h4 className="fw-semibold mb-3">
+                  <i className="bi bi-calendar-check text-info me-2"></i>
+                  Best Time to Visit
+                </h4>
+                <div className="d-flex flex-wrap gap-2">
+                  {itinerary.bestTimeToVisit.map((time: string, i: number) => (
+                    <span key={i} className="badge bg-info text-white p-2">
+                      {time}
+                    </span>
                   ))}
                 </div>
               </div>
-              <div className="mb-3">
-                <label className="form-label">Comment</label>
-                <textarea
-                  className="form-control"
-                  rows={4}
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share your experience..."
-                />
-              </div>
-              <button
-                className="btn btn-primary"
-                onClick={handleAddReview}
-                disabled={submittingReview || reviewRating === 0}
-              >
-                {submittingReview ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </div>
-          </div>
-        )}
+            )}
 
-        {itinerary.reviews && itinerary.reviews.length > 0 ? (
-          <div>
-            {itinerary.reviews.map((review: any, i: number) => (
-              <div key={i} className="card mb-3">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
+            {/* Tags */}
+            {itinerary.tags && itinerary.tags.length > 0 && (
+              <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+                <h4 className="fw-semibold mb-3">
+                  <i className="bi bi-tags text-secondary me-2"></i>
+                  Tags
+                </h4>
+                <div className="d-flex flex-wrap gap-2">
+                  {itinerary.tags.map((tag: string, i: number) => (
+                    <span key={i} className="badge bg-secondary p-2">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reviews Section */}
+            <div className="content-section bg-white rounded shadow-sm p-4 p-lg-5 mb-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="fw-semibold mb-0">Reviews</h4>
+                {isAuthenticated ? (
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                  >
+                    {showReviewForm ? 'Cancel' : 'Add Review'}
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => {
+                      alert('Please login to add a review');
+                      navigate('/login');
+                    }}
+                  >
+                    Login to Add Review
+                  </button>
+                )}
+              </div>
+
+              {showReviewForm && isAuthenticated && (
+                <div className="bg-light p-3 rounded border mb-3">
+                  <h5 className="mb-3">Write a Review</h5>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Rating</label>
                     <div>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          className="btn btn-link p-0 me-1"
+                          onClick={() => setReviewRating(star)}
+                        >
+                          <i
+                            className={`bi ${
+                              star <= reviewRating ? 'bi-star-fill' : 'bi-star'
+                            } text-warning`}
+                            style={{ fontSize: '1.5rem' }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Comment</label>
+                    <textarea
+                      className="form-control"
+                      rows={4}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience..."
+                    />
+                  </div>
+                  <div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleAddReview}
+                      disabled={submittingReview || reviewRating === 0}
+                    >
+                      {submittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                    <button
+                      className="btn btn-outline-secondary ms-2"
+                      onClick={() => {
+                        setShowReviewForm(false);
+                        setReviewComment('');
+                        setReviewRating(0);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {itinerary.reviews && itinerary.reviews.length > 0 ? (
+                <div>
+                  {itinerary.reviews.map((review: any, i: number) => (
+                    <div key={i} className="bg-light rounded border p-3 mb-2">
                       {renderStars(review.rating)}
+                      {review.comment && (
+                        <p className="mt-2 mb-0">{review.comment}</p>
+                      )}
                       {review.createdAt && (
-                        <small className="text-muted d-block">
+                        <small className="text-muted">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </small>
                       )}
                     </div>
-                  </div>
-                  {review.comment && <p className="mb-0">{review.comment}</p>}
+                  ))}
                 </div>
-              </div>
-            ))}
+              ) : (
+                <p className="text-muted mb-0">No reviews yet. Be the first to review!</p>
+              )}
+            </div>
           </div>
-        ) : (
-          <p className="text-muted">No reviews yet. Be the first to review!</p>
-        )}
+
+          {/* Sidebar */}
+          <div className="col-lg-4">
+            <div className="sidebar bg-white rounded shadow-sm p-4 p-lg-5 sticky-top">
+              <div className="text-center mb-4">
+                {itinerary.avgRating > 0 ? (
+                  <>
+                    {renderStars(itinerary.avgRating)}
+                    <p className="text-muted mt-2">
+                      Based on {itinerary.reviews?.length || 0} review(s)
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted">No ratings yet</p>
+                )}
+              </div>
+              <hr />
+              <h6 className="fw-bold mb-3">Quick Info</h6>
+              <div className="mb-2">
+                <strong>Type:</strong> <span className="badge bg-primary">{itinerary.type}</span>
+              </div>
+              {itinerary.city && (
+                <p className="mb-1"><strong>City:</strong> {itinerary.city}</p>
+              )}
+              {itinerary.state && (
+                <p className="mb-1"><strong>State:</strong> {itinerary.state}</p>
+              )}
+              {itinerary.country && (
+                <p className="mb-1"><strong>Country:</strong> {itinerary.country}</p>
+              )}
+              {itinerary.continent && (
+                <p className="mb-1"><strong>Continent:</strong> {itinerary.continent}</p>
+              )}
+              <p className="mb-1">
+                <strong>Duration:</strong> {itinerary.durationDays} Days
+              </p>
+              {itinerary.priceRange && (
+                <p className="mb-0">
+                  <strong>Price Range:</strong> <span className="text-success">{itinerary.priceRange}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

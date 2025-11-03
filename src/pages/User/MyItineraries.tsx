@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllItineraries } from '../../api/userServices';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
+import { getToken } from '../../utils/token';
 
 const MyItineraries: React.FC = () => {
   const navigate = useNavigate();
@@ -59,7 +61,18 @@ const MyItineraries: React.FC = () => {
           <h2 className="mb-3">My Itineraries</h2>
           <p className="text-muted">Manage your travel itineraries</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/user/create-itinerary')}>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => {
+            const token = getToken();
+            if (!token) {
+              alert('Please login to create an itinerary');
+              navigate('/login');
+              return;
+            }
+            navigate('/user/create-itinerary');
+          }}
+        >
           <i className="bi bi-plus-circle me-2"></i>
           Create Itinerary
         </button>
@@ -70,14 +83,15 @@ const MyItineraries: React.FC = () => {
           {itineraries.map((itinerary) => (
             <div key={itinerary.id || itinerary._id} className="col-md-6 col-lg-4 mb-4">
               <div className="card h-100">
-                {itinerary.thumbnail && (
-                  <img
-                    className="card-img-top"
-                    src={`${BASE_URL}/${itinerary.thumbnail}`}
-                    alt={itinerary.title}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                  />
-                )}
+                <img
+                  className="card-img-top"
+                  src={formatThumbnailForDisplay(itinerary.thumbnail, BASE_URL)}
+                  alt={itinerary.title}
+                  style={{ height: '200px', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                  }}
+                />
                 <div className="card-body d-flex flex-column">
                   <div className="d-flex justify-content-between align-items-start mb-2" style={{ gap: '0.5rem' }}>
                     <h5 className="card-title h5 mb-0" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', flex: '1', minWidth: 0 }}>{itinerary.title}</h5>
@@ -118,7 +132,10 @@ const MyItineraries: React.FC = () => {
                   <div className="d-flex gap-2">
                     <button
                       className="btn btn-outline-primary btn-sm flex-fill"
-                      onClick={() => navigate(`/user/itineraries/${itinerary.id || itinerary._id}`)}
+                      onClick={() => {
+                        const itineraryId = itinerary.id || itinerary._id;
+                        navigate(`/itineraries/${itineraryId}`);
+                      }}
                     >
                       <i className="bi bi-eye me-2"></i>
                       View
@@ -137,7 +154,18 @@ const MyItineraries: React.FC = () => {
             <p className="text-muted">
               Create your first travel itinerary and start planning your next adventure!
             </p>
-            <button className="btn btn-primary" onClick={() => navigate('/user/create-itinerary')}>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => {
+                const token = getToken();
+                if (!token) {
+                  alert('Please login to create an itinerary');
+                  navigate('/login');
+                  return;
+                }
+                navigate('/user/create-itinerary');
+              }}
+            >
               <i className="bi bi-plus-circle me-2"></i>
               Create Itinerary
             </button>

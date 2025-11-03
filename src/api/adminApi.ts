@@ -185,4 +185,12 @@ export const updateTravelGroup = async (data: any, id: string) => {
 
 export const deleteTravelGroup = async (id: string) => {
   return await axiosAdminMultipartInstance.delete(`/deleteTravelGroup/${id}`);
+};
+
+export const fetchAllUsers = async () => {
+  return await axiosAdminInstance.get("/user/fetchAllUsers");
+};
+
+export const inviteUserToTravelGroup = async (groupId: string, userId: string) => {
+  return await axiosAdminInstance.post(`/${groupId}/invite`, { userId });
 };  

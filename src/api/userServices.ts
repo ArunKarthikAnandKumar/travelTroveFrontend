@@ -150,10 +150,14 @@ export const getTravelGroupById = async (id: string) => {
   return response.data;
 };
 
-export const createTravelGroup = async (groupData: FormData) => {
+export const createTravelGroup = async (groupData: FormData | any) => {
+  // If it's already a plain object, send as JSON; otherwise send as FormData
+  const isFormData = groupData instanceof FormData;
   const response = await authenticatedAxios.post('/admin/user/createTravelGroup', groupData, {
-    headers: {
+    headers: isFormData ? {
       'Content-Type': 'multipart/form-data'
+    } : {
+      'Content-Type': 'application/json'
     }
   });
   return response.data;
@@ -200,6 +204,47 @@ export const submitContactForm = async (contactData: {
   message: string;
 }) => {
   const response = await axios.post(`${BASE_URL}/api/contact`, contactData);
+  return response.data;
+};
+
+// Location Data for Creating Itinerary
+export const fetchLocationDataForItinerary = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allItineraries`);
+  return response.data;
+};
+
+export const fetchAllContinents = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allContinents`);
+  return response.data;
+};
+
+export const fetchAllCountries = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allCountrys`);
+  return response.data;
+};
+
+export const fetchAllStates = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allStates`);
+  return response.data;
+};
+
+export const fetchAllCities = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allCities`);
+  return response.data;
+};
+
+export const fetchAllAttractions = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allAttractions`);
+  return response.data;
+};
+
+export const fetchAllHotels = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allHotels`);
+  return response.data;
+};
+
+export const fetchAllRestaurants = async () => {
+  const response = await axios.get(`${BASE_URL}/api/admin/allRestaurants`);
   return response.data;
 };
 

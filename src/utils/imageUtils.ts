@@ -87,30 +87,52 @@ export const compressImage = (
     });
 };
 
+// Placeholder image for missing or invalid images
+export const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+
 /**
  * Format thumbnail for display - handles various backend formats
  * @param thumbnail - Thumbnail string from backend (could be base64, path, or mixed)
  * @param baseUrl - Base URL for serving static files (optional)
- * @returns Formatted string ready for img src attribute
+ * @returns Formatted string ready for img src attribute, or placeholder if invalid/truncated
  */
-export const formatThumbnailForDisplay = (thumbnail: string, baseUrl?: string): string => {
-    if (!thumbnail) return '';
+export const formatThumbnailForDisplay = (thumbnail: string | null | undefined, baseUrl?: string): string => {
+    if (!thumbnail) return PLACEHOLDER_IMAGE;
     
-    // If it already starts with data:image, use it directly
+    // Check for truncated base64 strings (common issue: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAA")
     if (thumbnail.startsWith('data:image')) {
+        // Extract base64 part
+        const base64Part = thumbnail.split(',')[1] || '';
+        // If base64 part is too short (< 100 chars), it's likely truncated
+        if (base64Part.length < 100) {
+            return PLACEHOLDER_IMAGE;
+        }
+        // Check if it looks like a valid base64 string (contains valid characters and reasonable length)
+        if (base64Part.length > 100 && !/^[A-Za-z0-9+/]+=*$/.test(base64Part)) {
+            return PLACEHOLDER_IMAGE;
+        }
         return thumbnail;
     }
     
     // If it contains "data:image" (backend might have prefixed it), extract the data URL part
     const dataImageIndex = thumbnail.indexOf('data:image');
     if (dataImageIndex !== -1) {
-        // Extract everything from "data:image" onwards
-        return thumbnail.substring(dataImageIndex);
+        const extracted = thumbnail.substring(dataImageIndex);
+        const base64Part = extracted.split(',')[1] || '';
+        // Check if extracted part is valid
+        if (base64Part.length < 100) {
+            return PLACEHOLDER_IMAGE;
+        }
+        return extracted;
     }
     
     // If it's pure base64 (no prefix), add the data URL prefix
-    if (thumbnail.length > 100 && !thumbnail.includes('/')) {
-        return `data:image/jpeg;base64,${thumbnail}`;
+    if (thumbnail.length > 100 && !thumbnail.includes('/') && !thumbnail.startsWith('http')) {
+        // Validate it looks like base64
+        if (/^[A-Za-z0-9+/]+=*$/.test(thumbnail)) {
+            return `data:image/jpeg;base64,${thumbnail}`;
+        }
+        return PLACEHOLDER_IMAGE;
     }
     
     // If it starts with assets/ or is a path, use BASE_URL
@@ -119,7 +141,11 @@ export const formatThumbnailForDisplay = (thumbnail: string, baseUrl?: string): 
     }
     
     // Fallback: return as is or prepend baseUrl if provided
-    return baseUrl && !thumbnail.startsWith('http') ? `${baseUrl}/${thumbnail}` : thumbnail;
+    if (baseUrl && !thumbnail.startsWith('http')) {
+        return `${baseUrl}/${thumbnail}`;
+    }
+    
+    return thumbnail;
 };
 
 /**

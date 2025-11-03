@@ -74,88 +74,93 @@ const AdminSidebar: React.FC = () => {
           ></i>
         </div>
 
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {menuItems.map((item, index) => (
-            <li key={index}>
-              <Link
-                to={item.path}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color:
-                    location.pathname === item.path ? "#00d4ff" : "#ccc",
-                  padding: "12px 20px",
-                  transition: "background 0.3s",
-                  background:
-                    location.pathname === item.path
-                      ? "rgba(0, 212, 255, 0.15)"
-                      : "transparent",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    "rgba(0, 212, 255, 0.08)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    location.pathname === item.path
-                      ? "rgba(0, 212, 255, 0.15)"
-                      : "transparent")
-                }
-              >
-                <i
-                  className={`bi ${item.icon}`}
-                  style={{ fontSize: "1.2rem", width: "30px" }}
-                ></i>
-                {!collapsed && (
-                  <span
-                    style={{
-                      marginLeft: "10px",
-                      fontSize: "0.95rem",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {item.name}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)" }}>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1, overflowY: "auto" }}>
+            {menuItems.map((item, index) => (
+              <li key={index}>
+                <Link
+                  to={item.path}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    textDecoration: "none",
+                    color:
+                      location.pathname === item.path ? "#00d4ff" : "#ccc",
+                    padding: "12px 20px",
+                    transition: "background 0.3s",
+                    background:
+                      location.pathname === item.path
+                        ? "rgba(0, 212, 255, 0.15)"
+                        : "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgba(0, 212, 255, 0.08)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      location.pathname === item.path
+                        ? "rgba(0, 212, 255, 0.15)"
+                        : "transparent")
+                  }
+                >
+                  <i
+                    className={`bi ${item.icon}`}
+                    style={{ fontSize: "1.2rem", width: "30px" }}
+                  ></i>
+                  {!collapsed && (
+                    <span
+                      style={{
+                        marginLeft: "10px",
+                        fontSize: "0.95rem",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {item.name}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-        <div
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            width: "100%",
-            textAlign: "center",
-          }}
-        >
-          <button
-            onClick={logout}
+          <div
             style={{
-              border: "none",
-              background: "#00d4ff",
-              color: "#111",
-              fontWeight: 600,
-              borderRadius: "6px",
-              padding: collapsed ? "8px" : "8px 16px",
-              cursor: "pointer",
-              transition: "0.3s",
+              padding: "20px",
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              width: "100%",
             }}
-            onMouseEnter={(e) =>
-              ((e.target as HTMLButtonElement).style.backgroundColor = "#33e0ff")
-            }
-            onMouseLeave={(e) =>
-              ((e.target as HTMLButtonElement).style.backgroundColor = "#00d4ff")
-            }
           >
-            <i
-              className="bi bi-box-arrow-right"
-              style={{ marginRight: collapsed ? 0 : "6px" }}
-            ></i>
-            {!collapsed && "Logout"}
-          </button>
+            <button
+              onClick={logout}
+              style={{
+                border: "none",
+                background: "#00d4ff",
+                color: "#111",
+                fontWeight: 600,
+                borderRadius: "6px",
+                padding: collapsed ? "8px" : "8px 16px",
+                cursor: "pointer",
+                transition: "0.3s",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onMouseEnter={(e) =>
+                ((e.target as HTMLButtonElement).style.backgroundColor = "#33e0ff")
+              }
+              onMouseLeave={(e) =>
+                ((e.target as HTMLButtonElement).style.backgroundColor = "#00d4ff")
+              }
+            >
+              <i
+                className="bi bi-box-arrow-right"
+                style={{ marginRight: collapsed ? 0 : "6px" }}
+              ></i>
+              {!collapsed && "Logout"}
+            </button>
+          </div>
         </div>
       </div>
 

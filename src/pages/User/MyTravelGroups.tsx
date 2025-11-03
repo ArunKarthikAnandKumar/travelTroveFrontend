@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllTravelGroups, joinTravelGroup, getTravelGroupById } from '../../api/userServices';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
+import { getToken } from '../../utils/token';
 
 const MyTravelGroups: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +34,13 @@ const MyTravelGroups: React.FC = () => {
   };
 
   const handleJoinGroup = async (groupId: string) => {
+    const token = getToken();
+    if (!token) {
+      alert('Please login to join a travel group');
+      navigate('/login');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to join this travel group?')) {
       return;
     }
@@ -89,7 +98,18 @@ const MyTravelGroups: React.FC = () => {
           <h2 className="mb-3">Travel Groups</h2>
           <p className="text-muted">Join travel groups or create your own</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/user/create-travel-group')}>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => {
+            const token = getToken();
+            if (!token) {
+              alert('Please login to create a travel group');
+              navigate('/login');
+              return;
+            }
+            navigate('/user/create-travel-group');
+          }}
+        >
           Create Travel Group
         </button>
       </div>
@@ -99,14 +119,15 @@ const MyTravelGroups: React.FC = () => {
           {travelGroups.map((group) => (
             <div key={group._id} className="col-md-6 col-lg-4 mb-4">
               <div className="card h-100">
-                {group.thumbnail && (
-                  <img
-                    className="card-img-top"
-                    src={`${BASE_URL}/${group.thumbnail}`}
-                    alt={group.name}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                  />
-                )}
+                <img
+                  className="card-img-top"
+                  src={formatThumbnailForDisplay(group.thumbnail, BASE_URL)}
+                  alt={group.name}
+                  style={{ height: '200px', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                  }}
+                />
                 <div className="card-body d-flex flex-column">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <h5 className="card-title h5 mb-0">{group.name}</h5>
@@ -189,15 +210,16 @@ const MyTravelGroups: React.FC = () => {
               <div className="modal-body">
                 {selectedGroup && (
                   <>
-                    {selectedGroup.thumbnail && (
-                      <div className="text-center mb-3">
-                        <img
-                          src={`${BASE_URL}/${selectedGroup.thumbnail}`}
-                          alt={selectedGroup.name}
-                          style={{ maxHeight: '300px', width: '100%', objectFit: 'cover', borderRadius: '8px' }}
-                        />
-                      </div>
-                    )}
+                    <div className="text-center mb-3">
+                      <img
+                        src={formatThumbnailForDisplay(selectedGroup.thumbnail, BASE_URL)}
+                        alt={selectedGroup.name}
+                        style={{ maxHeight: '300px', width: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    </div>
                     
                     <div className="mb-3">
                       <h5>Description</h5>

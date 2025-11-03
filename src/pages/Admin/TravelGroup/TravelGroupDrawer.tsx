@@ -26,6 +26,7 @@ interface TravelGroup {
   inclusions: string[];
   exclusions: string[];
   thumbnail?: string | File;
+  isPrivate?: boolean;
 }
 
 // Import Bootstrap CSS
@@ -63,7 +64,8 @@ export const TravelGroupDrawer: React.FC<Props> = ({
     requirements: [],
     inclusions: [],
     exclusions: [],
-    thumbnail: ''
+    thumbnail: '',
+    isPrivate: false
   });
   
   const [newRequirement, setNewRequirement] = useState('');
@@ -226,7 +228,8 @@ export const TravelGroupDrawer: React.FC<Props> = ({
         requirements: [],
         inclusions: [],
         exclusions: [],
-        thumbnail: ''
+        thumbnail: '',
+        isPrivate: false
       });
       setPreviewImage('');
       setFormData(prev => ({ ...prev, thumbnail: '' }));
@@ -253,7 +256,8 @@ export const TravelGroupDrawer: React.FC<Props> = ({
         requirements: editData.requirements || [],
         inclusions: editData.inclusions || [],
         exclusions: editData.exclusions || [],
-        thumbnail: editData.thumbnail || ''
+        thumbnail: editData.thumbnail || '',
+        isPrivate: editData.isPrivate || false
       });
       if (editData.thumbnail && typeof editData.thumbnail === 'string') {
         const formattedThumbnail = formatThumbnailForDisplay(editData.thumbnail);
@@ -279,18 +283,18 @@ export const TravelGroupDrawer: React.FC<Props> = ({
           <div className="modal-body" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
             <form onSubmit={handleSubmit}>
               {/* Thumbnail Upload */}
-              {/* <div className="mb-3">
-                <label className="form-label">Group Thumbnail</label>
+              <div className="mb-3">
+                <label className="form-label">Group Thumbnail {!editData && '*'}</label>
                 <div className="d-flex align-items-center">
-                  <div className="me-3" style={{ width: '150px', height: '100px', border: '1px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="me-3" style={{ width: '150px', height: '100px', border: '1px dashed #ddd', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa' }}>
                     {previewImage ? (
                       <img 
                         src={previewImage} 
                         alt="Preview" 
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '4px' }} 
                       />
                     ) : (
-                      <span>No image selected</span>
+                      <span className="text-muted small">No image selected</span>
                     )}
                   </div>
                   <div>
@@ -310,15 +314,24 @@ export const TravelGroupDrawer: React.FC<Props> = ({
                     >
                       {isCompressing ? 'Compressing...' : 'Choose File'}
                     </button>
+                    {previewImage && (
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-danger btn-sm ms-2"
+                        onClick={handleRemoveImage}
+                      >
+                        Remove
+                      </button>
+                    )}
                     {isCompressing && (
                       <div className="mt-2 text-muted">
                         <small>Compressing image...</small>
                       </div>
                     )}
-                    <div className="form-text">Recommended size: 800x400px, max 5MB</div>
+                    <div className="form-text mt-1">Recommended size: 800x400px, max 5MB</div>
                   </div>
                 </div>
-              </div> */}
+              </div>
 
               <div className="row">
                 <div className="col-md-6 mb-3">
@@ -361,6 +374,21 @@ export const TravelGroupDrawer: React.FC<Props> = ({
                   onChange={handleInputChange}
                   required
                 ></textarea>
+              </div>
+
+              <div className="mb-3">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="isPrivate"
+                    checked={formData.isPrivate || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPrivate: e.target.checked }))}
+                  />
+                  <label className="form-check-label" htmlFor="isPrivate">
+                    Private Group (Only invited users can join)
+                  </label>
+                </div>
               </div>
 
               <div className="row">

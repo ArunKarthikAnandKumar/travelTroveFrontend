@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BASE_URL } from '../../utils/constatnts';
+import { formatThumbnailForDisplay, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 import './DestinationCard.css';
 
 const DestinationCard = ({ destination }) => {
@@ -67,32 +68,23 @@ const DestinationCard = ({ destination }) => {
     >
       <Link to={`/destinations/${id}`} className="text-decoration-none text-dark">
         <div className="position-relative" style={{ height: '220px', width: '100%' }}>
-          {thumbnail ? (
-            <img 
-              src={`${BASE_URL}/${thumbnail}`}
-              className="card-img-top" 
-              alt={title || 'Destination image'}
-              style={{ 
-                height: '220px', 
-                objectFit: 'cover', 
-                width: '100%',
-                display: 'block',
-                position: 'absolute',
-                top: 0,
-                left: 0
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent) {
-                  const fallback = parent.querySelector('.image-fallback');
-                  if (fallback) {
-                    fallback.style.display = 'block';
-                  }
-                }
-              }}
-            />
-          ) : null}
+          <img 
+            src={formatThumbnailForDisplay(thumbnail, BASE_URL)}
+            className="card-img-top" 
+            alt={title || 'Destination image'}
+            style={{ 
+              height: '220px', 
+              objectFit: 'cover', 
+              width: '100%',
+              display: 'block',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onError={(e) => {
+              e.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
+          />
           <div 
             className="image-fallback"
             style={{
